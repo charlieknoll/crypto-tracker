@@ -26,8 +26,12 @@ function MappedTransaction(tx) {
   this.toAccount = toAccount;
   this.amount = ethers.utils.formatEther(BigNumber.from(tx.value)) + " ETH";
   this.methodName = getMethodName(tx.input);
+  //TODO handle income and spending if necessary
+  if (this.methodName == "") this.methodName = "TRANSFER";
 
-  this.timestamp = new Date(parseInt(tx.timeStamp) * 1000).toUTCString(); //new Date(parseInt(tx.timestamp));
+  //this.timestamp = new Date(parseInt(tx.timeStamp) * 1000).toUTCString(); //new Date(parseInt(tx.timestamp));
+  this.timestamp = parseInt(tx.timeStamp);
+  this.date = new Date(this.timestamp * 1000).toISOString().slice(2, 10);
   //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
   this.price = getPrice(parseInt(tx.timeStamp));
   this.fee =
@@ -52,9 +56,9 @@ export const history = buildHistory;
 
 export const columns = [
   {
-    name: "timestamp",
-    label: "Timestamp",
-    field: "timestamp",
+    name: "date",
+    label: "Date",
+    field: "date",
     align: "left"
   },
   {

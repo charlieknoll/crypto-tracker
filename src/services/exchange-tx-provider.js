@@ -2,10 +2,13 @@ let exchangeTxs = require("../data/exchangetxs.json").result;
 
 function ExchangeTransaction(tx) {
   Object.assign(this, tx);
+  this.timestamp = parseInt(tx.timestamp);
+  this.date = new Date(this.timestamp * 1000).toISOString().slice(2, 10);
   this.amount = parseFloat(this.amount);
   this.price = parseFloat(this.price);
   this.fee = parseFloat(this.fee);
   this.gross = parseFloat(this.gross);
+  this.timestamp = parseInt(tx.timeStamp);
 }
 
 export const exchangeHistory = function() {

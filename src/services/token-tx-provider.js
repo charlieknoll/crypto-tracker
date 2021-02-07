@@ -214,15 +214,13 @@ function MappedTransaction(tx) {
 
   addTokenTx(this, toAccount, fromAccount);
   //determine action using parent tx and to/from owned
-
-  this.date = new Date(parseInt(tx.timeStamp) * 1000)
-    .toISOString()
-    .slice(2, 10);
+  this.timestamp = parseInt(tx.timeStamp);
+  this.date = new Date(this.timestamp * 1000).toISOString().slice(2, 10);
   //.replace(/-/g, ""); //new Date(parseInt(tx.timestamp));
   //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
 }
 
-export const tokenHistory = function() {
+function buildHistory() {
   //build tx list
   //fields: tx-seqno, timestamp, short date fee, ethprice, token, action, realized short term gain, realized long term gain,
   //cost basis
@@ -246,7 +244,8 @@ export const tokenHistory = function() {
   }
   //console.log("Token Prices", tokenPrices);
   return mappedTxs;
-};
+}
+export const tokenHistory = buildHistory;
 export const columns = [
   {
     name: "date",

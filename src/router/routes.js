@@ -32,6 +32,11 @@ const routes = [
         name: "exchange-transactions",
         path: "exchange-transactions",
         component: () => import("pages/PageExchangeTransactions.vue")
+      },
+      {
+        name: "capital-gains",
+        path: "capital-gains",
+        component: () => import("pages/PageCapitalGains.vue")
       }
     ]
   },
