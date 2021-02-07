@@ -27,6 +27,11 @@ const routes = [
         name: "token-transactions",
         path: "token-transactions",
         component: () => import("pages/PageTokenTransactions.vue")
+      },
+      {
+        name: "exchange-transactions",
+        path: "exchange-transactions",
+        component: () => import("pages/PageExchangeTransactions.vue")
       }
     ]
   },

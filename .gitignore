@@ -36,3 +36,5 @@ src/data/tokentxs.json
 src/data/tokentxs_test.json
 src/data/transactions.json
 src/data/bitcoin.tax/
+src/data/coinbase/
+src/data/exchangetxs.json

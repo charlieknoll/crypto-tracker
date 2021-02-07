@@ -90,7 +90,7 @@ const menuList = [
     icon: "mdi-history",
     label: "Exchange Trades",
     separator: false,
-    to: "/exchange-trades"
+    to: "/exchange-transactions"
   },
   {
     icon: "mdi-history",
