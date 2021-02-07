@@ -1,0 +1,25 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to Brave",
+      "port": 9222,
+      "request": "attach",
+      "type": "chrome",
+      "webRoot": "${workspaceFolder}/src",
+      "url": "http://localhost:8080",
+      "sourceMapPathOverrides": {
+        "webpack:///./src/services/*": "${webRoot}/services/*",
+        "webpack:///./src/data/*": "${webRoot}/data/*",
+        "webpack:///./src/boot/*": "${webRoot}/boot/*",
+        "webpack:///./*": "${webRoot}/*",
+        "webpack:///src/*": "${webRoot}/*",
+        "webpack:///*": "*",
+        "webpack:///./~/*": "${webRoot}/node_modules/*"
+      }
+    },
+  ]
+}
