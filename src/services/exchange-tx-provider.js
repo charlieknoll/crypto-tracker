@@ -8,7 +8,7 @@ function ExchangeTransaction(tx) {
   this.price = parseFloat(this.price);
   this.fee = parseFloat(this.fee);
   this.gross = parseFloat(this.gross);
-  this.timestamp = parseInt(tx.timeStamp);
+  this.timestamp = parseInt(tx.timestamp);
 }
 
 export const exchangeHistory = function() {
