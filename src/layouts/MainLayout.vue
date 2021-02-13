@@ -14,7 +14,20 @@
         <q-toolbar-title>
           Crypto Tracker
         </q-toolbar-title>
-
+        <q-btn-dropdown stretch flat :label="taxYear">
+          <q-list>
+            <q-item
+              v-for="n in taxYears"
+              :key="`x.${n}`"
+              clickable
+              v-close-popup
+              tabindex="0"
+              @click="taxYear = n"
+            >
+              <q-item-label>{{ n }}</q-item-label>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
         <div>v{{ $q.version }}</div>
       </q-toolbar>
     </q-header>
@@ -68,45 +81,62 @@ const menuList = [
     to: "/addresses"
   },
   {
-    icon: "mdi-history",
+    icon: "mdi-door-open",
     label: "Opening positions",
     separator: false,
     to: "/opening-positions"
   },
 
   {
-    icon: "mdi-history",
+    icon: "mdi-swap-horizontal-circle",
     label: "Account Transactions",
     separator: false,
     to: "/chain-transactions"
   },
   {
-    icon: "mdi-history",
+    icon: "mdi-swap-horizontal-variant",
     label: "Token Transactions",
     separator: false,
     to: "/token-transactions"
   },
   {
-    icon: "mdi-history",
+    icon: "mdi-file-swap",
     label: "Exchange Trades",
     separator: false,
     to: "/exchange-transactions"
   },
   {
-    icon: "mdi-history",
+    icon: "mdi-cash-multiple",
+    label: "Income",
+    separator: false,
+    to: "/income"
+  },
+  {
+    icon: "mdi-credit-card-minus",
+    label: "Spending",
+    separator: false,
+    to: "/spending"
+  },
+  {
+    icon: "mdi-door-closed",
+    label: "Closing Positions",
+    separator: false,
+    to: "/closing-positions"
+  },
+  {
+    icon: "mdi-calculator",
     label: "Capital Gains",
     separator: true,
     to: "/capital-gains"
   },
   {
-    icon: "mdi-import",
+    icon: "mdi-database-arrow-right",
     label: "Import",
     separator: false,
     to: "/import"
   },
   {
-    icon: "mdi-import",
-    class: "mdi-rotate-180",
+    icon: "mdi-database-arrow-down",
     label: "Tax Export",
     separator: true,
     to: "/export"
@@ -125,14 +155,21 @@ const menuList = [
     separator: false
   }
 ];
-
+import { store } from "../boot/store";
 export default {
   name: "MainLayout",
   data() {
     return {
       leftDrawerOpen: false,
-      menuList
+      menuList,
+      taxYear: store.taxYear,
+      taxYears: [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
     };
+  },
+  watch: {
+    taxYear: function(val) {
+      actions.setLocalStorage("taxYear", val);
+    }
   }
 };
 </script>

@@ -8,7 +8,7 @@ export const store = Vue.observable({
   apikey: LocalStorage.getItem("apikey") ?? process.env.ETHERSCAN_API_KEY,
   autoImport: LocalStorage.getItem("autoImport") ?? false,
   addresses: LocalStorage.getItem("addresses").map(a => new Address(a)) ?? [],
-
+  taxYear: LocalStorage.getItem("taxYear") ?? 2020,
   onLine: navigator.onLine,
   logs: [],
   validApikey: function() {

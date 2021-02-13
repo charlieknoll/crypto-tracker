@@ -41,7 +41,7 @@ function addTokenTx(tx, toAccount, fromAccount) {
   } else {
     tx.gross = 0.0;
   }
-  if (toAccount.type == "Owned" && fromAccount.type != "Owned") {
+  if (toAccount.type.includes("Owned") && !fromAccount.type.includes("Owned")) {
     tx.parentTx.inTokenTxs.push(tx);
     tx.parentTx.usdSpent += tx.gross;
     //assign fees proportionally to non baseCurrency buys/sells
@@ -51,7 +51,10 @@ function addTokenTx(tx, toAccount, fromAccount) {
     } else {
       tx.action = tx.fromName.includes("Spam") ? "SPAM" : tx.action + "/BUY";
     }
-  } else if (fromAccount.type == "Owned" && toAccount.type != "Owned") {
+  } else if (
+    fromAccount.type.includes("Owned") &&
+    !toAccount.type.includes("Owned")
+  ) {
     tx.parentTx.outTokenTxs.push(tx);
     tx.parentTx.usdProceeds += tx.gross;
 

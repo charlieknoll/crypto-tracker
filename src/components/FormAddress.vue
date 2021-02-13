@@ -21,7 +21,14 @@ export default {
   props: ["address"],
   data() {
     return {
-      options: ["Owned", "Gift", "Token", "Spending", "Income"]
+      options: [
+        "Owned",
+        "Exchange Owned",
+        "Gift",
+        "Token",
+        "Spending",
+        "Income"
+      ]
     };
   }
 };
