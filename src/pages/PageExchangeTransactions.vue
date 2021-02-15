@@ -15,14 +15,14 @@
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { exchangeHistory, columns } from "../services/exchange-tx-provider";
+import { columns } from "../services/exchange-tx-provider";
 
 export default {
   name: "PageExchangeTransactions",
   data() {
     return {
       filter: "",
-      history: [],
+      history: store.exchangeTrades,
       columns,
       pagination: {
         rowsPerPage: 0
@@ -54,7 +54,6 @@ export default {
   },
   mounted() {
     window.__vue_mounted = this.name;
-    this.history = exchangeHistory();
   }
 };
 </script>

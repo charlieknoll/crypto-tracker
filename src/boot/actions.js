@@ -11,6 +11,23 @@ export const actions = {
     store[key] = val;
     LocalStorage.set(key, val);
   },
+  merge: function(key, val) {
+    const storeArray = store[key];
+    const array = [...storeArray];
+    //add vals with txId not in array
+    for (const item of val) {
+      const index = array.findIndex(v => v.txId == item.txId);
+      if (index < 0) {
+        array.push(item);
+      } else {
+        array[index] = item;
+      }
+    }
+    //sort on timestamp
+    array.sort((a, b) => a.timestamp - b.timestamp);
+    //setLocalStorage
+    this.setLocalStorage(key, array);
+  },
   addImportedAddress: function(a) {
     let address = store.addresses.find(
       s => s.address.toLowerCase() === a.address.toLowerCase()

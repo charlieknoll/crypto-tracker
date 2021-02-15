@@ -82,7 +82,7 @@ const menuList = [
   },
   {
     icon: "mdi-door-open",
-    label: "Opening positions",
+    label: "Opening Positions",
     separator: false,
     to: "/opening-positions"
   },

@@ -37,6 +37,16 @@ const routes = [
         name: "capital-gains",
         path: "capital-gains",
         component: () => import("pages/PageCapitalGains.vue")
+      },
+      {
+        name: "opening-positions",
+        path: "opening-positions",
+        component: () => import("pages/PageOpeningPositions.vue")
+      },
+      {
+        name: "import",
+        path: "import",
+        component: () => import("pages/PageImport.vue")
       }
     ]
   },

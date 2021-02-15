@@ -20,6 +20,6 @@ const mappedPrices = stagePrices
   })
   .reverse();
 export const getCRVPrice = function(yymmdd) {
-  const price = mappedPrices.find(mp => yymmdd == mp.date);
+  const price = mappedPrices.find(mp => yymmdd == mp.Date);
   return price.price;
 };
