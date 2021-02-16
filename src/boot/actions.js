@@ -8,7 +8,8 @@ export const actions = {
   store: store,
   setLocalStorage: function(key, val) {
     if (val === "null" || val === null) return;
-    store[key] = val;
+    //store[key] = val;
+    Vue.set(store, key, val);
     LocalStorage.set(key, val);
   },
   merge: function(key, val) {
