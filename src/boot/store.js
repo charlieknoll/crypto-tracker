@@ -9,6 +9,7 @@ export const store = Vue.observable({
   autoImport: LocalStorage.getItem("autoImport") ?? false,
   addresses: LocalStorage.getItem("addresses").map(a => new Address(a)) ?? [],
   openingPositions: LocalStorage.getItem("openingPositions") ?? [],
+  chainTransactions: LocalStorage.getItem("chainTransactions") ?? [],
   exchangeTrades: LocalStorage.getItem("exchangeTrades") ?? [],
   prices: LocalStorage.getItem("prices") ?? [],
   taxYear: LocalStorage.getItem("taxYear") ?? 2020,

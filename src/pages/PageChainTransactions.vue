@@ -1,8 +1,8 @@
 <template>
-  <q-page class="" id="pageHistory">
+  <q-page class="" id="pageChainTransactions">
     <q-table
-      title="Account Transactions"
-      :data="history"
+      title="Chain Transactions"
+      :data="$store.chainTransactions"
       :columns="columns"
       row-key="txId"
       dense
@@ -16,14 +16,13 @@
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { history, columns } from "../services/tx-provider";
+import { columns } from "../services/tx-provider";
 
 export default {
   name: "PageChainTransactions",
   data() {
     return {
       filter: "",
-      history: [],
       columns,
       pagination: {
         rowsPerPage: 0
@@ -54,8 +53,7 @@ export default {
     }
   },
   mounted() {
-    window.__vue_mounted = this.name;
-    this.history = history();
+    window.__vue_mounted = "pageChainTransactions";
   }
 };
 </script>

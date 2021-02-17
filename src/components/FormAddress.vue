@@ -24,6 +24,7 @@ export default {
       options: [
         "Owned",
         "Exchange Owned",
+        "Contract Owned",
         "Gift",
         "Token",
         "Spending",

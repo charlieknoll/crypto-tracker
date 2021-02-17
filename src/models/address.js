@@ -3,6 +3,7 @@ export default function(a) {
     address: a.address,
     name: a.name,
     type: a.type,
-    imported: a.imported ?? false
+    imported: a.imported ?? false,
+    lastBlockSync: a.lastBlockSync ?? 0
   };
 }

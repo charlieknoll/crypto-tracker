@@ -1,7 +1,7 @@
 import { LocalStorage } from "quasar";
 import { store } from "../boot/store";
 import { ethers } from "ethers";
-import { getPrice } from "../data/etherPrices";
+import { getPrice } from "../services/price-provider";
 import { actions } from "../boot/actions";
 const BigNumber = ethers.BigNumber;
 import getMethodName from "./methods";
@@ -33,7 +33,7 @@ function MappedTransaction(tx) {
   this.timestamp = parseInt(tx.timeStamp);
   this.date = new Date(this.timestamp * 1000).toISOString().slice(2, 10);
   //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
-  this.price = getPrice(parseInt(tx.timeStamp));
+  this.price = getPrice("ETH", parseInt(tx.timeStamp));
   this.fee =
     Math.round(
       ethers.utils.formatEther(
@@ -43,17 +43,13 @@ function MappedTransaction(tx) {
       )
     ) / 100;
 }
-
-function buildHistory() {
-  transactions = LocalStorage.getItem("transactions") ?? transactions;
+export const processChainTransactionData = function(data) {
   const mappedTxs = [];
   for (const t of transactions) {
     mappedTxs.push(new MappedTransaction(t, 0));
   }
-  return mappedTxs;
-}
-export const history = buildHistory;
-
+  actions.merge("chainTransactions", mappedData);
+};
 export const columns = [
   {
     name: "date",

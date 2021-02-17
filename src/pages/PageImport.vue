@@ -11,6 +11,24 @@
         filled
         multiple
       />
+      <q-btn label="Import Transactions" @click="importTransactions"></q-btn>
+      <br />
+      <p>Current block: {{ currentBlock }}</p>
+
+      <q-list>
+        <q-item v-for="address in ownedAddresses" :key="address.address">
+          <q-item-section>
+            <q-item-label>{{ address.name }}</q-item-label>
+            <q-item-label caption>{{ address.address }}</q-item-label>
+          </q-item-section>
+
+          <q-item-section side top>
+            <q-item-label caption
+              >Last block: {{ address.lastBlockSync }}</q-item-label
+            >
+          </q-item-section>
+        </q-item>
+      </q-list>
     </q-form>
   </q-page>
 </template>
@@ -19,6 +37,7 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { processFile } from "../services/file-handler";
+import { getCurrentBlock } from "../services/etherscan-provider";
 const reader = new FileReader();
 let currentFileName = null;
 reader.onload = async function(event) {
@@ -34,11 +53,23 @@ export default {
   data() {
     return {
       files: null,
-
+      currentBlock: 0,
       messages: [],
       $store: store,
       $actions: actions
     };
+  },
+  methods: {
+    async importTransactions() {
+      //call etherscan import service
+
+      console.log(currentBlock);
+    }
+  },
+  computed: {
+    ownedAddresses() {
+      return this.$store.addresses.filter(a => a.type == "Owned");
+    }
   },
   watch: {
     files: function(val) {
@@ -53,8 +84,9 @@ export default {
     }
   },
 
-  mounted() {
+  async mounted() {
     window.__vue_mounted = "PageImport";
+    this.currentBlock = await getCurrentBlock();
   }
 };
 </script>
