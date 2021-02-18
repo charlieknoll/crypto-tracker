@@ -37,7 +37,10 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { processFile } from "../services/file-handler";
-import { getCurrentBlock } from "../services/etherscan-provider";
+import {
+  getCurrentBlock,
+  getTransactions
+} from "../services/etherscan-provider";
 const reader = new FileReader();
 let currentFileName = null;
 reader.onload = async function(event) {
@@ -62,8 +65,7 @@ export default {
   methods: {
     async importTransactions() {
       //call etherscan import service
-
-      console.log(currentBlock);
+      await getTransactions();
     }
   },
   computed: {

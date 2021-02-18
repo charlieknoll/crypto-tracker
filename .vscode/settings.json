@@ -1,104 +1,105 @@
 {
-  "solidity.linter": "solhint",
-  "solidity.solhintRules": {
-      "avoid-sha3": "warn",
-      "indent": [
-          "warn",
-          4
-      ],
-      "max-line-length": [
-          "warn",
-          120
-      ]
-  },
-  "cSpell.userWords": [
-      "Jahr",
-      "PDFW",
-      "RESPSONSIVE",
-      "apikey",
-      "apikeys",
-      "axios",
-      "braintree",
-      "descr",
-      "docsify",
-      "gravatar",
-      "middlewares",
-      "mkdir",
-      "promisify",
-      "reportsjs",
-      "responsivepaper",
-      "streamifier",
-      "webhook",
-      "webhooks"
-  ],
-  "cSpell.enableFiletypes": [
-      "vue"
-  ],
-  "editor.tabSize": 2,
-  "editor.codeActionsOnSave": {
-      "source.fixAll": true
-  },
-  "editor.fontLigatures": true,
-  "emmet.includeLanguages": {
-      "vue-html": "html",
-      "vue": "html"
-  },
-  "emmet.triggerExpansionOnTab": true,
-  "emmet.showAbbreviationSuggestions": true,
-  "emmet.showExpandedAbbreviation": "always",
-  "files.trimTrailingWhitespace": true,
-  "git.confirmSync": false,
-  "git.enableSmartCommit": true,
-  "python.languageServer": "Microsoft",
-  "insertnum.start": 1,
-  "splitHTMLAttributes.sortOrder": [
-      "^v-if",
-      "^v-else",
-      "^v-show",
-      "^v-model",
-      "^v-for",
-      "^:key",
-      "^key",
-      "^v-",
-      "^:",
-      "^@click",
-      "^@",
-      "^id",
-      "^class",
-      "^.*=\""
-  ],
-  "splitHTMLAttributes.closingBracketOnNewLine": true,
-  "vetur.format.defaultFormatter.html": "prettyhtml",
-  "vetur.format.defaultFormatter.js": "prettier-eslint",
-  "[vue]": {
-      "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
-  },
-  "[jsonc]": {
-      "editor.defaultFormatter": "vscode.json-language-features"
-  },
-  "[javascript]": {
-      "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
-  },
-  "sasslint.enable": false,
-  "sass.format.enabled": false,
-  "sass.format.setPropertySpace": false,
-  "sass.andStared": [
-      "active",
-      "focus",
-      "hover",
-      "nth-child"
-  ],
-  "[json]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  //"window.zoomLevel": -0.25
-  "vetur.validation.template": false,
-  "vetur.format.enable": false,
-  "eslint.validate": [
-      "javascript",
-      "javascriptreact",
-      "typescript",
-      "vue"
-  ],
-  "vetur.experimental.templateInterpolationService": true
+    "solidity.linter": "solhint",
+    "solidity.solhintRules": {
+        "avoid-sha3": "warn",
+        "indent": [
+            "warn",
+            4
+        ],
+        "max-line-length": [
+            "warn",
+            120
+        ]
+    },
+    "cSpell.userWords": [
+        "Jahr",
+        "PDFW",
+        "RESPSONSIVE",
+        "apikey",
+        "apikeys",
+        "axios",
+        "braintree",
+        "descr",
+        "docsify",
+        "gravatar",
+        "middlewares",
+        "mkdir",
+        "promisify",
+        "reportsjs",
+        "responsivepaper",
+        "streamifier",
+        "webhook",
+        "webhooks"
+    ],
+    "cSpell.enableFiletypes": [
+        "vue"
+    ],
+    "editor.tabSize": 2,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    },
+    "editor.fontLigatures": false,
+    "editor.fontSize": 13,
+    "emmet.includeLanguages": {
+        "vue-html": "html",
+        "vue": "html"
+    },
+    "emmet.triggerExpansionOnTab": true,
+    "emmet.showAbbreviationSuggestions": true,
+    "emmet.showExpandedAbbreviation": "always",
+    "files.trimTrailingWhitespace": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+    "python.languageServer": "Microsoft",
+    "insertnum.start": 1,
+    "splitHTMLAttributes.sortOrder": [
+        "^v-if",
+        "^v-else",
+        "^v-show",
+        "^v-model",
+        "^v-for",
+        "^:key",
+        "^key",
+        "^v-",
+        "^:",
+        "^@click",
+        "^@",
+        "^id",
+        "^class",
+        "^.*=\""
+    ],
+    "splitHTMLAttributes.closingBracketOnNewLine": true,
+    "vetur.format.defaultFormatter.html": "prettyhtml",
+    "vetur.format.defaultFormatter.js": "prettier-eslint",
+    "[vue]": {
+        "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+    },
+    "sasslint.enable": false,
+    "sass.format.enabled": false,
+    "sass.format.setPropertySpace": false,
+    "sass.andStared": [
+        "active",
+        "focus",
+        "hover",
+        "nth-child"
+    ],
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    //"window.zoomLevel": -0.25
+    "vetur.validation.template": false,
+    "vetur.format.enable": false,
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "vue"
+    ],
+    "vetur.experimental.templateInterpolationService": true
 }

@@ -39,4 +39,5 @@ export const getPrice = async function(symbol, tradeDate) {
   } catch (err) {
     console.log("error getting price: ", err);
   }
+  return 0.0;
 };
