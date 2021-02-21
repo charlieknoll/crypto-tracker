@@ -1,29 +1,80 @@
 <template>
-  <q-page class="" id="pageChainTransactions">
+  <q-page class="" id="pageChainTransactions" ref="p">
     <q-table
       title="Chain Transactions"
-      :data="$store.chainTransactions"
+      :data="filtered"
       :columns="columns"
       row-key="txId"
       dense
       @row-click="click"
       :pagination.sync="pagination"
       :rows-per-page-options="[0]"
-    />
+      class="my-sticky-header-table"
+      :style="{ height: tableHeight }"
+    >
+      <template v-slot:top-right>
+        <q-input
+          style="width: 400px"
+          filled
+          debounce="500"
+          v-model="accountFilter"
+          label="Filter by
+        Account Name or Type"
+          stack-label
+          dense
+          clearable
+        />
+        <q-toggle
+          class="q-mr-lg"
+          v-model="onlyShowUnNamed"
+          label="Only Unnamed"
+        ></q-toggle>
+        <q-btn
+          color="primary"
+          icon-right="archive"
+          label="Export to csv"
+          no-caps
+        />
+      </template>
+      <!-- <template v-slot:body-cell-error="props">
+        <q-tr :props="props">
+          <q-td :props="props">
+            <q-badge color="red" class="mdi-alert">Error</q-badge>
+          </q-td>
+        </q-tr>
+      </template> -->
+      <template v-slot:body-cell-error="props">
+        <q-td :props="props">
+          <q-chip
+            :color="!props.row.isError ? 'green' : 'red'"
+            :class="!props.row.isError ? 'hidden' : ''"
+            text-color="white"
+            dense
+            class="text-weight-bolder"
+            square
+            >Error!</q-chip
+          >
+        </q-td>
+      </template>
+    </q-table>
   </q-page>
 </template>
 
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { columns } from "../services/tx-provider";
+import { getChainTransactions, columns } from "../services/chain-tx-provider";
+import { dom } from "quasar";
+const { height } = dom;
 
 export default {
   name: "PageChainTransactions",
   data() {
     return {
-      filter: "",
+      accountFilter: "",
+      onlyShowUnNamed: false,
       columns,
+      chainTransactions: [],
       pagination: {
         rowsPerPage: 0
       },
@@ -32,28 +83,80 @@ export default {
     };
   },
   computed: {
-    filteredHistory() {
-      if (this.filter.length == 0) return this.history;
-      const filter = this.filter;
-      const filtered = this.history.filter(function(a) {
-        return (
-          (a.name && a.name.includes(filter)) ||
-          (a.address && a.address.includes(filter)) ||
-          !a.name ||
-          !a.address
-        );
-      });
+    filtered() {
+      let txs =
+        this.$store.taxYear == "All"
+          ? this.chainTransactions
+          : this.chainTransactions.filter(
+              ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
+            );
 
-      return filtered;
+      if (this.onlyShowUnNamed) {
+        txs = txs.filter(
+          tx =>
+            tx.toName.substring(0, 2) == "0x" ||
+            tx.fromName.substring(0, 2) == "0x"
+        );
+      }
+      if (this.accountFilter) {
+        txs = txs.filter(
+          tx =>
+            tx.toName
+              .toLowerCase()
+              .includes(this.accountFilter.toLowerCase()) ||
+            tx.fromName.toLowerCase().includes(this.accountFilter.toLowerCase())
+        );
+      }
+      return txs;
+    },
+    tableHeight() {
+      if (this.$q.screen.height == 0) return;
+      return (
+        (this.$q.screen.sm
+          ? this.$q.screen.height
+          : this.$q.screen.height - 50) + "px"
+      );
     }
   },
   methods: {
     click(evt, row, index) {
-      window.open("https://etherscan.io/tx/" + row.hash);
+      if (evt.ctrlKey) {
+        window.open("https://etherscan.io/tx/" + row.hash);
+      }
     }
+  },
+  async created() {
+    this.chainTransactions = await getChainTransactions();
+    // const chainTransactions = []
+    // for (const ct of this.$store.chainTransactions) {
+    //   ct.init();
+    // }
+    //actions.setLocalStorage("chainTransactions", this.$store.chainTransactions)
   },
   mounted() {
     window.__vue_mounted = "pageChainTransactions";
   }
 };
 </script>
+<style lang="sass">
+.my-sticky-header-table
+  /* height or max-height is important */
+  /* height: 310px */
+
+  .q-table__top,
+  .q-table__bottom,
+  thead tr:first-child th
+    /* bg color is important for th; just specify one */
+    background-color: lightgrey
+
+  thead tr th
+    position: sticky
+    z-index: 1
+  thead tr:first-child th
+    top: 0
+
+  /* this is when the loading indicator appears */
+  &.q-table--loading thead tr:last-child th
+    /* height of all previous header rows */
+    top: 48px
+</style>

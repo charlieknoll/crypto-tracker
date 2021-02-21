@@ -1,14 +1,15 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import axios from "axios";
+import { throttle } from "../utils/cacheUtils";
 
 const coinGeckoSymbolMap = {};
 coinGeckoSymbolMap["BTC"] = "bitcoin";
 coinGeckoSymbolMap["ETH"] = "ethereum";
 coinGeckoSymbolMap["CRV"] = "curve-dao-token";
-
+let lastRequestTime = 0;
 export const getPrice = async function(symbol, tradeDate) {
-  const prices = [...store.prices];
+  const prices = actions.getData("prices");
   const tradeDatePrice = prices.find(
     p => p.symbol == symbol && p.tradeDate == tradeDate
   );
@@ -25,17 +26,30 @@ export const getPrice = async function(symbol, tradeDate) {
     tradeDate.substring(2, 5) +
     "-20" +
     tradeDate.substring(0, 2);
+  lastRequestTime = await throttle(lastRequestTime, 50); //100req's per minute
   let apiUrl = `https://api.coingecko.com/api/v3/coins/${coinGeckoSymbolMap[symbol]}/history?date=${cgTradeDate}&localization=false`;
   try {
-    const result = await axios.get(apiUrl);
-    const price = parseFloat(result.data.market_data.current_price.usd);
-    prices.push({
-      symbol,
-      date: tradeDate,
-      price
-    });
-    actions.setLocalStorage("prices", prices);
-    return price;
+    while (new Date().getTime() - lastRequestTime < 60000) {
+      const result = await axios.get(apiUrl);
+      if (result.status != 200) {
+        //throw new Error("Invalid return status: " + result.data.message);
+        console.log("Throttling for 10 seconds...");
+        await throttle(lastRequestTime, 10000);
+        continue;
+      }
+      const price = parseFloat(
+        result.data.market_data
+          ? result.data.market_data.current_price.usd
+          : 0.0
+      );
+      prices.push({
+        symbol,
+        tradeDate,
+        price
+      });
+      actions.setData("prices", prices);
+      return price;
+    }
   } catch (err) {
     console.log("error getting price: ", err);
   }

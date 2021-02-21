@@ -88,7 +88,7 @@ export const processExchangeTradesFile = async function(data) {
     }
   }
 
-  actions.merge("exchangeTrades", mappedData);
+  actions.mergeArrayToData("exchangeTrades", mappedData);
   console.log(`Addeds ${mappedData.length} exchange transactions`);
   //TODO set running balances
   const assets = [];
@@ -112,8 +112,8 @@ export const processExchangeTradesFile = async function(data) {
     asset.amount += et.action == "BUY" ? et.amount : -et.amount;
     et.runningBalance = asset.amount;
   }
-  actions.setLocalStorage("openingPositions", _openingPositions);
-  actions.setLocalStorage("exchangeTrades", _exchangeTrades);
+  actions.mergeArrayToData("openingPositions", _openingPositions);
+  actions.mergeArrayToData("exchangeTrades", _exchangeTrades);
 };
 
 export const columns = [

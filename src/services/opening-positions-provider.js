@@ -29,7 +29,7 @@ export const processOpeningPositionsFile = function(openingData) {
         .substring(2, 9)
     };
   });
-  actions.merge("openingPositions", mappedOpeningData);
+  actions.mergeArrayToData("openingPositions", mappedOpeningData);
 };
 
 export const columns = [

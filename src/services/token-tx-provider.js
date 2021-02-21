@@ -6,7 +6,7 @@ import { getCRVPrice } from "../data/CRVPrices";
 
 import { actions } from "../boot/actions";
 import getMethodName from "./methods";
-import { history } from "./tx-provider";
+import { history } from "./chain-tx-provider";
 
 const BigNumber = ethers.BigNumber;
 const FixedNumber = ethers.FixedNumber;

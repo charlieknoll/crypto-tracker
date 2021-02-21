@@ -5,5 +5,29 @@ const shuffle = function(arr) {
   }
   return arr;
 };
+function wrapCsvValue(val) {
+  let formatted = val;
 
-export { shuffle };
+  formatted =
+    formatted === void 0 || formatted === null ? "" : String(formatted);
+
+  formatted = formatted.split('"').join('""');
+  /**
+   * Excel accepts \n and \r in strings, but some other CSV parsers do not
+   * Uncomment the next two lines to escape new lines
+   */
+  // .split('\n').join('\\n')
+  // .split('\r').join('\\r')
+
+  return `"${formatted}"`;
+}
+const convertToCsv = function(arr, names) {
+  const content = [names.map(n => wrapCsvValue(n)).join(",")]
+    .concat(
+      arr.map(val => names.map(name => wrapCsvValue(val[name])).join(","))
+    )
+    .join("\r\n");
+  return content;
+};
+
+export { shuffle, convertToCsv };

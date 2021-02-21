@@ -14,6 +14,11 @@
         <q-toolbar-title>
           Crypto Tracker
         </q-toolbar-title>
+        <q-spinner
+          color="white"
+          size="3em"
+          :class="[$store.importing ? '' : 'hidden']"
+        />
         <q-btn-dropdown stretch flat :label="taxYear">
           <q-list>
             <q-item
@@ -156,6 +161,16 @@ const menuList = [
   }
 ];
 import { store } from "../boot/store";
+import { actions } from "../boot/actions";
+
+const taxYears = [];
+const currentYear = new Date().getFullYear();
+
+for (let i = store.startYear; i <= currentYear; i++) {
+  taxYears.push(i);
+}
+taxYears.push("All");
+
 export default {
   name: "MainLayout",
   data() {
@@ -163,12 +178,14 @@ export default {
       leftDrawerOpen: false,
       menuList,
       taxYear: store.taxYear,
-      taxYears: [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
+      taxYears: taxYears,
+      $store: store
     };
   },
+
   watch: {
     taxYear: function(val) {
-      actions.setLocalStorage("taxYear", val);
+      actions.setObservableData("taxYear", val);
     }
   }
 };

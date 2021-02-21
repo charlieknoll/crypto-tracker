@@ -62,6 +62,50 @@ const methodIds = [
   {
     id: "0x3ccfd60b",
     name: "withdraw"
+  },
+  {
+    id: "0x983b94fb",
+    name: "finalizeAuction"
+  },
+  {
+    id: "0x1896f70a",
+    name: "setResolver"
+  },
+  {
+    id: "0x0230a07c",
+    name: "releaseDeed"
+  },
+  {
+    id: "0xe8d6dbb4",
+    name: "renewAll"
+  },
+  {
+    id: "0xb4427263",
+    name: "createTokens"
+  },
+  {
+    id: "0xacfdfd1c",
+    name: "deploy"
+  },
+  {
+    id: "0xce92dced",
+    name: "newBid"
+  },
+  {
+    id: "0x47872b42",
+    name: "unsealBid"
+  },
+  {
+    id: "0xede8acdb",
+    name: "startAuction"
+  },
+  {
+    id: "0xfebefd61",
+    name: "startAuctionsAndBid"
+  },
+  {
+    id: "0xacf1a841",
+    name: "renew"
   }
 ];
 export default function getMethodName(input) {

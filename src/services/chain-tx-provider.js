@@ -1,15 +1,13 @@
-import { LocalStorage } from "quasar";
 import { store } from "../boot/store";
 import { ethers } from "ethers";
-import { getPrice } from "../services/price-provider";
+import { getPrice } from "./price-provider";
 import { actions } from "../boot/actions";
 const BigNumber = ethers.BigNumber;
 import getMethodName from "./methods";
+import { LocalStorage } from "quasar";
 
-function MappedTransaction(tx) {
-  this.tx = tx;
-  this.init = async function() {
-    const tx = this.tx;
+export const ChainTransaction = function() {
+  this.init = async function(tx) {
     actions.addImportedAddress({ address: tx.to });
     actions.addImportedAddress({ address: tx.from });
     this.hash = tx.hash.toLowerCase();
@@ -18,7 +16,7 @@ function MappedTransaction(tx) {
       a => a.address.toLowerCase() == tx.to.toLowerCase()
     );
     this.toName = toAccount ? toAccount.name : tx.to.substring(0, 8);
-
+    this.isError = tx.isError == "1";
     const fromAccount = store.addresses.find(
       a => a.address.toLowerCase() == tx.from.toLowerCase()
     );
@@ -32,9 +30,9 @@ function MappedTransaction(tx) {
 
     //this.timestamp = new Date(parseInt(tx.timeStamp) * 1000).toUTCString(); //new Date(parseInt(tx.timestamp));
     this.timestamp = parseInt(tx.timeStamp);
-    this.date = new Date(this.timestamp * 1000).toISOString().slice(2, 10);
+    this.date = new Date(this.timestamp * 1000).toISOString().slice(0, 10);
     //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
-    this.price = await getPrice("ETH", this.date);
+    this.price = await getPrice("ETH", this.date.slice(2, 10));
     this.fee =
       Math.round(
         ethers.utils.formatEther(
@@ -43,16 +41,18 @@ function MappedTransaction(tx) {
             .mul(BigNumber.from(Math.round(parseFloat(this.price) * 100)))
         )
       ) / 100;
+    return this;
   };
-}
-export const processChainTransactionData = async function(data) {
+};
+export const getChainTransactions = async function() {
+  const data = LocalStorage.getItem("chainTransactions");
   const mappedTxs = [];
   for (const t of data) {
-    const tx = new MappedTransaction(t);
-    await tx.init();
+    const tx = new ChainTransaction();
+    await tx.init(t);
     mappedTxs.push(tx);
   }
-  actions.merge("chainTransactions", mappedTxs);
+  return mappedTxs;
 };
 export const columns = [
   {
@@ -89,24 +89,27 @@ export const columns = [
     name: "amount",
     label: "Amount",
     field: "amount",
-    align: "right"
+    align: "right",
+    format: (val, row) => `${(parseFloat(val) ?? 0.0).toFixed(4)}`
   },
   {
     name: "price",
     label: "price",
     field: "price",
-    align: "right"
+    align: "right",
+    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
   },
   {
     name: "fee",
     label: "fee",
     field: "fee",
     align: "right",
-    format: (val, row) => `$${val}`
+    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
   },
   {
     name: "error",
-    label: "error",
-    field: "isError"
+    label: "",
+    field: "isError",
+    align: "left"
   }
 ];

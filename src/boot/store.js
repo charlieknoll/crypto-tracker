@@ -6,12 +6,12 @@ import Address from "../models/address";
 
 export const store = Vue.observable({
   apikey: LocalStorage.getItem("apikey") ?? process.env.ETHERSCAN_API_KEY,
+  startYear: 2013,
+  importing: false,
   autoImport: LocalStorage.getItem("autoImport") ?? false,
-  addresses: LocalStorage.getItem("addresses").map(a => new Address(a)) ?? [],
+  addresses: (LocalStorage.getItem("addresses") ?? []).map(a => new Address(a)),
   openingPositions: LocalStorage.getItem("openingPositions") ?? [],
-  chainTransactions: LocalStorage.getItem("chainTransactions") ?? [],
   exchangeTrades: LocalStorage.getItem("exchangeTrades") ?? [],
-  prices: LocalStorage.getItem("prices") ?? [],
   taxYear: LocalStorage.getItem("taxYear") ?? 2020,
   onLine: navigator.onLine,
   logs: [],

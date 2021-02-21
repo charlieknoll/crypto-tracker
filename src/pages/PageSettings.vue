@@ -34,10 +34,10 @@ export default {
   },
   watch: {
     apikey: function(val) {
-      actions.setLocalStorage("apikey", val);
+      actions.setObservableData("apikey", val);
     },
     autoImport: function(val) {
-      actions.setLocalStorage("autoImport", val);
+      actions.setObservableData("autoImport", val);
     }
   },
   mounted() {

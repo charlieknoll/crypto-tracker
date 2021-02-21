@@ -27,6 +27,7 @@ export default {
         "Contract Owned",
         "Gift",
         "Token",
+        "Tax Deductible Donation",
         "Spending",
         "Income"
       ]

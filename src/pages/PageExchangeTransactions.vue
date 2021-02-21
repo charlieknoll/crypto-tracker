@@ -96,7 +96,7 @@ export default {
   },
   methods: {
     clear() {
-      actions.setLocalStorage("exchangeTrades", []);
+      actions.setData("exchangeTrades", []);
       this.files = [];
     }
   },

@@ -25,14 +25,24 @@
     </q-item>
     <q-separator></q-separator>
     <q-table
+      dense
       title="Addresses"
       :data="filteredAddresses"
       row-key="address"
-      dense
       @row-click="editAddress"
       :pagination.sync="pagination"
       :rows-per-page-options="[0]"
-    />
+    >
+      <template v-slot:top-right>
+        <q-btn
+          color="primary"
+          icon-right="archive"
+          label="Export to csv"
+          no-caps
+          @click="exportTable"
+        />
+      </template>
+    </q-table>
   </q-page>
 </template>
 
@@ -40,6 +50,8 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import FormAddress from "src/components/FormAddress.vue";
+import { convertToCsv } from "src/utils/arrayUtil";
+import { exportFile } from "quasar";
 export default {
   name: "PageAddresses",
   data() {
@@ -51,6 +63,7 @@ export default {
       },
       edit: false,
       record: null,
+      updatedRecord: null,
       $store: store,
       $actions: actions
     };
@@ -103,17 +116,56 @@ export default {
           this.addresses = savedAddresses;
           this.$refs.addressDlg.hide();
         });
+    },
+    exportTable() {
+      const simpleAddress = this.$store.addresses.map(a => {
+        return { address: a.address, name: a.name, type: a.type };
+      });
+      const names = ["address", "name", "type"];
+      const content = convertToCsv(simpleAddress, names);
+      const status = exportFile("addresses.csv", content, "text/csv");
+      if (status !== true) {
+        this.$q.notify({
+          message: "Browser denied file download...",
+          color: "negative",
+          icon: "warning"
+        });
+      }
     }
   },
   watch: {
+    //   "record.name": {
+    //     handler: function(newVal, oldVal) {
+    //       // console.log("new", newVal);
+    //       // console.log("old", oldVal);
+    //       // console.log(this.record);
+    //       this.updatedRecord = this.record;
+    //     }
+    //   },
+    //   edit: {
+    //     handler: function(newVal, oldVal) {
+    //       if (oldVal && this.updatedRecord) {
+    //         console.log(this.updatedRecord.name);
+    //         for (const ct of this.$store.chainTransactions) {
+    //           if (ct.toAccount.address == this.updatedRecord.address) {
+    //             ct.toName = this.updatedRecord.name;
+    //           }
+    //           if (ct.fromAccount.address == this.updatedRecord.address) {
+    //             ct.fromName = this.updatedRecord.name;
+    //           }
+    //         }
+    //         this.$actions.setLocalStorage(
+    //           "chainTransactions",
+    //           this.$store.chainTransactions
+    //         );
+    //       }
+    //     }
+
     addresses: {
       handler: function(val) {
-        actions.setLocalStorage("addresses", val);
+        actions.setObservableData("addresses", val);
       },
       deep: true
-    },
-    autoImport: function(val) {
-      actions.setLocalStorage("autoImport", val);
     }
   },
   mounted() {

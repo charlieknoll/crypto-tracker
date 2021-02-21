@@ -1,21 +1,9 @@
 import axios from "axios";
 import { store } from "../boot/store";
-import { processChainTransactionData } from "./tx-provider";
+import { actions } from "../boot/actions";
+import { throttle } from "../utils/cacheUtils";
 let lastRequestTime = 0;
 
-function _sleep(ms) {
-  console.log(`Sleeping for ${ms / 1000} seconds...`);
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-async function _throttle(timestamp) {
-  //Don't allow more than 5 req's/sec
-  if (timestamp - lastRequestTime < 500) {
-    await _sleep(timestamp - lastRequestTime);
-  }
-  //First recentRequest will be oldest
-
-  lastRequestTime = timestamp;
-}
 export const getTransactions = async function() {
   const ownedAccounts = store.addresses.filter(a => a.type == "Owned");
 
@@ -23,7 +11,7 @@ export const getTransactions = async function() {
   const currentBlock = await getCurrentBlock();
   for (const oa of ownedAccounts) {
     //get normal tx's
-    await _throttle(new Date().getTime());
+    lastRequestTime = await throttle(lastRequestTime, 500);
     const normalTxApiUrl = `https://api.etherscan.io/api?module=account&action=txlist&address=${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.apikey}`;
     try {
       const result = await axios.get(normalTxApiUrl);
@@ -34,8 +22,18 @@ export const getTransactions = async function() {
         throw new Error("Invalid return status: " + result.data.message);
       }
       const txs = result.data.result;
+      for (const tx of txs) {
+        if (tx.timeStamp) {
+          tx.timestamp = parseInt(tx.timeStamp);
+        }
+      }
+
       //process txs
-      await processChainTransactionData(txs);
+      actions.mergeArrayToData(
+        "chainTransactions",
+        txs,
+        (a, b) => a.hash == b.hash
+      );
 
       //setLastBlockSync
       oa.lastBlockSync = currentBlock;
@@ -43,6 +41,7 @@ export const getTransactions = async function() {
       console.log("error getting txs: ", err);
     }
   }
+  actions.setObservableData("addresses", store.addresses);
   //send to tx provider
   //get tokenTx's
   //send to tokenTx provider

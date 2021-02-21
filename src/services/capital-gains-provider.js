@@ -2,7 +2,7 @@ import { LocalStorage } from "quasar";
 import { store } from "../boot/store";
 import { tokenHistory } from "./token-tx-provider";
 
-import { history } from "./tx-provider";
+import { history } from "./chain-tx-provider";
 
 import { exchangeHistory } from "./exchange-tx-provider";
 

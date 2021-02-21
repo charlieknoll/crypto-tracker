@@ -12,6 +12,9 @@
         multiple
       />
       <q-btn label="Import Transactions" @click="importTransactions"></q-btn>
+      <q-btn label="Clear Transactions" @click="clearTransactions"></q-btn>
+      <q-btn label="Clear Price History" @click="clearPriceHistory"></q-btn>
+
       <br />
       <p>Current block: {{ currentBlock }}</p>
 
@@ -65,9 +68,31 @@ export default {
   methods: {
     async importTransactions() {
       //call etherscan import service
-      await getTransactions();
+      try {
+        this.$store.importing = true;
+        await getTransactions();
+      } finally {
+        this.$store.importing = false;
+      }
+    },
+    clearPriceHistory() {
+      this.$actions.setData("prices", []);
+    },
+    clearTransactions() {
+      this.$actions.setData("chainTransactions", []);
+      this.$actions.setData("tokenTransactions", []);
+      const addresses = [...this.$store.addresses];
+      const cleansedAddresses = [];
+      for (const a of addresses) {
+        a.lastBlockSync = 0;
+        if (a.name.substring(0, 2) != "0x") {
+          cleansedAddresses.push(a);
+        }
+      }
+      this.$actions.setObservableData("addresses", cleansedAddresses);
     }
   },
+
   computed: {
     ownedAddresses() {
       return this.$store.addresses.filter(a => a.type == "Owned");
