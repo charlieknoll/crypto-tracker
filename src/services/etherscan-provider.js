@@ -4,37 +4,66 @@ import { actions } from "../boot/actions";
 import { throttle } from "../utils/cacheUtils";
 let lastRequestTime = 0;
 
+async function getTokenTransactions(oa) {
+  const tokenTxApiUrl =
+    "https://api.etherscan.io/api?module=account&action=tokentx&address=" +
+    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.apikey}`;
+
+  const result = await axios.get(tokenTxApiUrl);
+  if (
+    result.data.status != "1" &&
+    result.data.message != "No transactions found"
+  ) {
+    throw new Error("Invalid return status: " + result.data.message);
+  }
+  const txs = result.data.result;
+  for (const tx of txs) {
+    if (tx.timeStamp) {
+      tx.timestamp = parseInt(tx.timeStamp);
+    }
+  }
+  actions.mergeArrayToData(
+    "tokenTransactions",
+    txs,
+    (a, b) => a.hash == b.hash
+  );
+}
+async function getAccountTransactions(oa) {
+  const normalTxApiUrl =
+    "https://api.etherscan.io/api?module=account&action=txlist&address=" +
+    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.apikey}`;
+
+  const result = await axios.get(normalTxApiUrl);
+  if (
+    result.data.status != "1" &&
+    result.data.message != "No transactions found"
+  ) {
+    throw new Error("Invalid return status: " + result.data.message);
+  }
+  const txs = result.data.result;
+  for (const tx of txs) {
+    if (tx.timeStamp) {
+      tx.timestamp = parseInt(tx.timeStamp);
+    }
+  }
+  actions.mergeArrayToData(
+    "chainTransactions",
+    txs,
+    (a, b) => a.hash == b.hash
+  );
+}
 export const getTransactions = async function() {
   const ownedAccounts = store.addresses.filter(a => a.type == "Owned");
 
   //loop through "Owned accounts"
   const currentBlock = await getCurrentBlock();
   for (const oa of ownedAccounts) {
-    //get normal tx's
-    lastRequestTime = await throttle(lastRequestTime, 500);
-    const normalTxApiUrl = `https://api.etherscan.io/api?module=account&action=txlist&address=${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.apikey}`;
     try {
-      const result = await axios.get(normalTxApiUrl);
-      if (
-        result.data.status != "1" &&
-        result.data.message != "No transactions found"
-      ) {
-        throw new Error("Invalid return status: " + result.data.message);
-      }
-      const txs = result.data.result;
-      for (const tx of txs) {
-        if (tx.timeStamp) {
-          tx.timestamp = parseInt(tx.timeStamp);
-        }
-      }
-
-      //process txs
-      actions.mergeArrayToData(
-        "chainTransactions",
-        txs,
-        (a, b) => a.hash == b.hash
-      );
-
+      //get normal tx's
+      lastRequestTime = await throttle(lastRequestTime, 500);
+      await getAccountTransactions(oa);
+      lastRequestTime = await throttle(lastRequestTime, 500);
+      await getTokenTransactions(oa);
       //setLastBlockSync
       oa.lastBlockSync = currentBlock;
     } catch (err) {

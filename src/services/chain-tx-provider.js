@@ -8,21 +8,16 @@ import { LocalStorage } from "quasar";
 
 export const ChainTransaction = function() {
   this.init = async function(tx) {
-    actions.addImportedAddress({ address: tx.to });
-    actions.addImportedAddress({ address: tx.from });
+    this.toAccount = actions.addImportedAddress({ address: tx.to });
+    this.fromAccount = actions.addImportedAddress({ address: tx.from });
     this.hash = tx.hash.toLowerCase();
     this.txId = tx.hash.substring(0, 8);
-    const toAccount = store.addresses.find(
-      a => a.address.toLowerCase() == tx.to.toLowerCase()
-    );
-    this.toName = toAccount ? toAccount.name : tx.to.substring(0, 8);
+
+    this.toName = this.toAccount ? this.toAccount.name : tx.to.substring(0, 8);
     this.isError = tx.isError == "1";
-    const fromAccount = store.addresses.find(
-      a => a.address.toLowerCase() == tx.from.toLowerCase()
-    );
-    this.fromName = fromAccount ? fromAccount.name : tx.from.substring(0, 8);
-    this.fromAccount = fromAccount;
-    this.toAccount = toAccount;
+    this.fromName = this.fromAccount
+      ? this.fromAccount.name
+      : tx.from.substring(0, 8);
     this.amount = ethers.utils.formatEther(BigNumber.from(tx.value)) + " ETH";
     this.methodName = getMethodName(tx.input);
     //TODO handle income and spending if necessary
@@ -45,7 +40,7 @@ export const ChainTransaction = function() {
   };
 };
 export const getChainTransactions = async function() {
-  const data = LocalStorage.getItem("chainTransactions");
+  const data = LocalStorage.getItem("chainTransactions") ?? [];
   const mappedTxs = [];
   for (const t of data) {
     const tx = new ChainTransaction();

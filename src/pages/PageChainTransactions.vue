@@ -65,6 +65,7 @@ import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { getChainTransactions, columns } from "../services/chain-tx-provider";
 import { dom } from "quasar";
+import Vue from "Vue";
 const { height } = dom;
 
 export default {
@@ -74,7 +75,7 @@ export default {
       accountFilter: "",
       onlyShowUnNamed: false,
       columns,
-      chainTransactions: [],
+      chainTransactions: Object.freeze([]),
       pagination: {
         rowsPerPage: 0
       },
@@ -126,7 +127,8 @@ export default {
     }
   },
   async created() {
-    this.chainTransactions = await getChainTransactions();
+    const chainTxs = await getChainTransactions();
+    Vue.set(this, "chainTransactions", Object.freeze(chainTxs));
     // const chainTransactions = []
     // for (const ct of this.$store.chainTransactions) {
     //   ct.init();

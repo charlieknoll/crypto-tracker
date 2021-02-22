@@ -1,20 +1,12 @@
 import { LocalStorage } from "quasar";
-import { store } from "../boot/store";
 import { ethers } from "ethers";
-import { getPrice } from "../data/etherPrices";
-import { getCRVPrice } from "../data/CRVPrices";
-
+import { getPrice } from "../services/price-provider";
 import { actions } from "../boot/actions";
-import getMethodName from "./methods";
-import { history } from "./chain-tx-provider";
-
+import { getChainTransactions } from "./chain-tx-provider";
 const BigNumber = ethers.BigNumber;
-const FixedNumber = ethers.FixedNumber;
 const baseCurrencies = ["USDC", "USDT", "TUSD", "DAI"];
-let tokenPrices = [];
+const tokenPrices = [];
 
-let tokentxs = require("../data/tokentxs.json").result;
-const parentTxs = history();
 function toNumberWithDecimals(bn, decimals) {
   if (!bn || !decimals) return 0.0;
   return (
@@ -26,6 +18,7 @@ function toNumberWithDecimals(bn, decimals) {
     ) / 1000
   );
 }
+
 function initParentTransaction(tx) {
   tx.inTokenTxs = [];
   tx.outTokenTxs = [];
@@ -33,7 +26,7 @@ function initParentTransaction(tx) {
   tx.usdProceeds = 0.0;
   tx.usdSpent = 0.0;
 }
-function addTokenTx(tx, toAccount, fromAccount) {
+async function initTokenTx(tx, toAccount, fromAccount) {
   tx.action = tx.parentTx.methodName;
   if (baseCurrencies.find(c => c == tx.tokenSymbol.toUpperCase())) {
     const gross = tx.decimalAmount;
@@ -47,7 +40,7 @@ function addTokenTx(tx, toAccount, fromAccount) {
     //assign fees proportionally to non baseCurrency buys/sells
     if (tx.parentTx.toAccount && tx.parentTx.toAccount.type == "Income") {
       tx.action += "/INCOME";
-      tx.gross = tx.decimalAmount * getCRVPrice(tx.date);
+      tx.gross = tx.decimalAmount * (await getPrice(tx.symbol, tx.date));
     } else {
       tx.action = tx.fromName.includes("Spam") ? "SPAM" : tx.action + "/BUY";
     }
@@ -161,82 +154,75 @@ function setGross(pt) {
   }
 }
 
-function MappedTransaction(tx) {
-  const toAccount = actions.addImportedAddress({ address: tx.to });
-  const fromAccount = actions.addImportedAddress({ address: tx.from });
-  //token symbol assigned here
-  Object.assign(this, tx);
-  this.hash = tx.hash.toLowerCase();
-  this.toName = toAccount.name;
-  this.fromName = fromAccount.name;
-  this.toAccount = toAccount;
-  this.fromAccount = fromAccount;
-  //TODO convert amount using token decimal
-  this.amount = BigNumber.from(tx.value);
-  this.decimalAmount = toNumberWithDecimals(this.amount, tx.tokenDecimal);
+function TokenTransaction() {
+  this.init = async function(tx, parentTxs) {
+    this.toAccount = actions.addImportedAddress({ address: tx.to });
+    this.fromAccount = actions.addImportedAddress({ address: tx.from });
+    this.tokenSymbol = tx.tokenSymbol;
+    this.hash = tx.hash.toLowerCase();
+    this.toName = this.toAccount.name;
+    this.fromName = this.fromAccount.name;
+    //TODO convert amount using token decimal
+    this.amount = BigNumber.from(tx.value);
+    this.decimalAmount = toNumberWithDecimals(this.amount, tx.tokenDecimal);
 
-  //this.displayAmount = ethers.utils.formatUnits(tx.value, tx.tokenDecimal);
-  this.displayAmount =
-    Math.round(
-      BigNumber.from(tx.value)
-        .mul(100)
-        .div(BigNumber.from(10).pow(tx.tokenDecimal))
-        .toNumber()
-    ) / 100;
+    //this.displayAmount = ethers.utils.formatUnits(tx.value, tx.tokenDecimal);
+    this.displayAmount =
+      Math.round(
+        BigNumber.from(tx.value)
+          .mul(100)
+          .div(BigNumber.from(10).pow(tx.tokenDecimal))
+          .toNumber()
+      ) / 100;
+    this.date = new Date(this.timestamp * 1000).toISOString().slice(2, 10);
 
-  let ethPrice = getPrice(parseInt(tx.timeStamp));
-  this.fee =
-    Math.round(
-      ethers.utils.formatEther(
-        BigNumber.from(tx.gasUsed)
-          .mul(BigNumber.from(tx.gasPrice))
-          .mul(BigNumber.from(parseFloat(ethPrice) * 100))
-      )
-    ) / 100;
+    let ethPrice = await getPrice("ETH", parseInt(tx.timeStamp));
+    this.fee =
+      Math.round(
+        ethers.utils.formatEther(
+          BigNumber.from(tx.gasUsed)
+            .mul(BigNumber.from(tx.gasPrice))
+            .mul(BigNumber.from(parseFloat(ethPrice) * 100))
+        )
+      ) / 100;
 
-  // this.fee = toNumberWithDecimals(
-  //   BigNumber.from(tx.gasUsed)
-  //     .mul(BigNumber.from(tx.gasPrice))
-  //     .mul(BigNumber.from(parseFloat(ethPrice))),
-  //   18
-  // );
+    //set parent transaction
+    this.parentTx = parentTxs.find(pt => pt.hash == tx.hash);
+    if (!this.parentTx) {
+      //TODO trigger download from etherscan
+      this.parentTx = { hash: tx.hash };
+      initParentTransaction(this.parentTx);
+    }
 
-  //set parent transaction
-  this.parentTx = parentTxs.find(pt => pt.hash == tx.hash);
-  if (!this.parentTx) {
-    //TODO trigger download from etherscan
-    this.parentTx = { hash: tx.hash };
-    initParentTransaction(this.parentTx);
-  }
+    this.seqNo =
+      this.parentTx.outTokenTxs.length +
+      this.parentTx.inTokenTxs.length +
+      this.parentTx.otherTokenTxs.length;
+    this.txId = this.hash.substring(2, 8) + "-" + this.seqNo;
 
-  this.seqNo =
-    this.parentTx.outTokenTxs.length +
-    this.parentTx.inTokenTxs.length +
-    this.parentTx.otherTokenTxs.length;
-  this.txId = this.hash.substring(2, 8) + "-" + this.seqNo;
-
-  addTokenTx(this, toAccount, fromAccount);
-  //determine action using parent tx and to/from owned
-  this.timestamp = parseInt(tx.timeStamp);
-  this.date = new Date(this.timestamp * 1000).toISOString().slice(2, 10);
-  //.replace(/-/g, ""); //new Date(parseInt(tx.timestamp));
-  //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
+    init.TokenTx(this, toAccount, fromAccount);
+    //determine action using parent tx and to/from owned
+    this.timestamp = parseInt(tx.timeStamp);
+    //.replace(/-/g, ""); //new Date(parseInt(tx.timestamp));
+    //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
+  };
 }
 
-function buildHistory() {
+export const getTokenTransactions = async function() {
   //build tx list
   //fields: tx-seqno, timestamp, short date fee, ethprice, token, action, realized short term gain, realized long term gain,
   //cost basis
-  tokentxs = LocalStorage.getItem("tokentxs") ?? tokentxs;
-  tokenPrices = [];
-
+  tokentxs = LocalStorage.getItem("tokenTransactions") ?? [];
   //start with tx's and insert any token txs
   const mappedTxs = [];
+  const parentTxs = await getChainTransactions();
   for (const pt of parentTxs) {
     initParentTransaction(pt);
   }
   for (const t of tokentxs) {
-    mappedTxs.push(new MappedTransaction(t, 0));
+    const tokenTx = new TokenTransaction();
+    await tokenTx.init(t, parentTxs);
+    mappedTxs.push(tokenTx);
   }
   //distribute baseCurrency costs/proceeds and fees to non baseCurrency
   for (const pt of parentTxs) {
@@ -247,8 +233,8 @@ function buildHistory() {
   }
   //console.log("Token Prices", tokenPrices);
   return mappedTxs;
-}
-export const tokenHistory = buildHistory;
+};
+
 export const columns = [
   {
     name: "date",
