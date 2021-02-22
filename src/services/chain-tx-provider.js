@@ -1,4 +1,3 @@
-import { store } from "../boot/store";
 import { ethers } from "ethers";
 import { getPrice } from "./price-provider";
 import { actions } from "../boot/actions";

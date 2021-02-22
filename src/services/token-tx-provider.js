@@ -73,7 +73,7 @@ function distributeFee(pt) {
   }
 }
 //For only base currency tx's
-function setBaseCurrencyExchangeTxGross(pt) {
+function setBaseCurrencySwapTxGross(pt) {
   //take the abs of in and out difference
   const additionalFee = Math.abs(pt.usdProceeds - pt.usdSpent);
 
@@ -146,7 +146,7 @@ function setGross(pt) {
   //TODO ensure that all tokens are baseTokens
 
   if (pt.usdProceeds !== 0.0 && pt.usdSpent !== 0.0) {
-    setBaseCurrencyExchangeTxGross(pt);
+    setBaseCurrencySwapTxGross(pt);
   } else if (pt.usdProceeds + pt.usdSpent != 0.0) {
     setBaseCurrencyTokenTxGross(pt);
   } else {
@@ -200,7 +200,7 @@ function TokenTransaction() {
       this.parentTx.otherTokenTxs.length;
     this.txId = this.hash.substring(2, 8) + "-" + this.seqNo;
 
-    init.TokenTx(this, toAccount, fromAccount);
+    initTokenTx(this, toAccount, fromAccount);
     //determine action using parent tx and to/from owned
     this.timestamp = parseInt(tx.timeStamp);
     //.replace(/-/g, ""); //new Date(parseInt(tx.timestamp));
