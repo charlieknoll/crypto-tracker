@@ -46,6 +46,7 @@ export const actions = {
     address.name = a.address.substring(0, 8);
     store.addresses.push(address);
     this.setData("addresses", store.addresses);
+    return address;
   }
 };
 

@@ -19,13 +19,17 @@ export const getPrice = async function(symbol, tradeDate) {
   }
 
   //Get price from Coingecko
-  if (!coinGeckoSymbolMap[symbol]) return -1;
+  if (!coinGeckoSymbolMap[symbol]) {
+    //TODO add to coingecko symbol list without coinid, auto lookup?
+    console.error("Symbol not found: " + symbol);
+
+    return 0.0;
+  }
 
   const cgTradeDate =
-    tradeDate.substring(6, 8) +
     tradeDate.substring(2, 5) +
-    "-20" +
-    tradeDate.substring(0, 2);
+    tradeDate.substring(5, 8) +
+    tradeDate.substring(0, 4);
   lastRequestTime = await throttle(lastRequestTime, 50); //100req's per minute
   let apiUrl = `https://api.coingecko.com/api/v3/coins/${coinGeckoSymbolMap[symbol]}/history?date=${cgTradeDate}&localization=false`;
   try {

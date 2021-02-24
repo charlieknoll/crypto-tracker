@@ -2,7 +2,7 @@
   <q-page class="" id="pageTokenTransactions">
     <q-table
       title="Token Transactions"
-      :data="history"
+      :data="filtered"
       :columns="columns"
       row-key="txId"
       dense
@@ -16,14 +16,16 @@
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { tokenHistory, columns } from "../services/token-tx-provider";
+import { getTokenTransactions, columns } from "../services/token-tx-provider";
+import Vue from "Vue";
 
 export default {
   name: "PageTokenTransactions",
   data() {
     return {
-      filter: "",
-      history: [],
+      accountFilter: "",
+      onlyShowUnNamed: false,
+      tokenTransactions: Object.freeze([]),
       columns: columns,
       pagination: {
         rowsPerPage: 0
@@ -33,29 +35,46 @@ export default {
     };
   },
   computed: {
-    filteredHistory() {
-      if (this.filter.length == 0) return this.history;
-      const filter = this.filter;
-      const filtered = this.history.filter(function(a) {
-        return (
-          (a.name && a.name.includes(filter)) ||
-          (a.address && a.address.includes(filter)) ||
-          !a.name ||
-          !a.address
-        );
-      });
+    filtered() {
+      let txs =
+        this.$store.taxYear == "All"
+          ? this.tokenTransactions
+          : this.tokenTransactions.filter(
+              ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
+            );
 
-      return filtered;
+      if (this.onlyShowUnNamed) {
+        txs = txs.filter(
+          tx =>
+            tx.toName.substring(0, 2) == "0x" ||
+            tx.fromName.substring(0, 2) == "0x"
+        );
+      }
+      if (this.accountFilter) {
+        txs = txs.filter(
+          tx =>
+            tx.toName
+              .toLowerCase()
+              .includes(this.accountFilter.toLowerCase()) ||
+            tx.fromName.toLowerCase().includes(this.accountFilter.toLowerCase())
+        );
+      }
+      return txs;
     }
   },
   methods: {
     click(evt, row, index) {
-      window.open("https://etherscan.io/tx/" + row.hash);
+      if (evt.ctrlKey) {
+        window.open("https://etherscan.io/tx/" + row.hash);
+      }
     }
+  },
+  async created() {
+    const tokenTxs = await getTokenTransactions();
+    Vue.set(this, "tokenTransactions", Object.freeze(tokenTxs));
   },
   mounted() {
     window.__vue_mounted = "PageTokenTransactions";
-    this.history = tokenHistory();
   }
 };
 </script>

@@ -26,7 +26,7 @@ export const ChainTransaction = function() {
     this.timestamp = parseInt(tx.timeStamp);
     this.date = new Date(this.timestamp * 1000).toISOString().slice(0, 10);
     //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
-    this.price = await getPrice("ETH", this.date.slice(2, 10));
+    this.price = await getPrice("ETH", this.date);
     this.fee =
       Math.round(
         ethers.utils.formatEther(

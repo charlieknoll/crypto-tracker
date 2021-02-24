@@ -19,45 +19,14 @@ function toNumberWithDecimals(bn, decimals) {
   );
 }
 
-function initParentTransaction(tx) {
+function _initParentTransaction(tx) {
   tx.inTokenTxs = [];
   tx.outTokenTxs = [];
   tx.otherTokenTxs = [];
   tx.usdProceeds = 0.0;
   tx.usdSpent = 0.0;
 }
-async function initTokenTx(tx, toAccount, fromAccount) {
-  tx.action = tx.parentTx.methodName;
-  if (baseCurrencies.find(c => c == tx.tokenSymbol.toUpperCase())) {
-    const gross = tx.decimalAmount;
-    tx.gross = gross;
-  } else {
-    tx.gross = 0.0;
-  }
-  if (toAccount.type.includes("Owned") && !fromAccount.type.includes("Owned")) {
-    tx.parentTx.inTokenTxs.push(tx);
-    tx.parentTx.usdSpent += tx.gross;
-    //assign fees proportionally to non baseCurrency buys/sells
-    if (tx.parentTx.toAccount && tx.parentTx.toAccount.type == "Income") {
-      tx.action += "/INCOME";
-      tx.gross = tx.decimalAmount * (await getPrice(tx.symbol, tx.date));
-    } else {
-      tx.action = tx.fromName.includes("Spam") ? "SPAM" : tx.action + "/BUY";
-    }
-  } else if (
-    fromAccount.type.includes("Owned") &&
-    !toAccount.type.includes("Owned")
-  ) {
-    tx.parentTx.outTokenTxs.push(tx);
-    tx.parentTx.usdProceeds += tx.gross;
 
-    tx.action += tx.parentTx.toAccount.type == "Gift" ? "/GIFT" : "/SELL";
-  } else {
-    tx.action = "TRANSFER";
-    tx.gross = 0.0;
-    tx.parentTx.otherTokenTxs.push(tx);
-  }
-}
 function distributeFee(pt) {
   const allTxs = pt.inTokenTxs.concat(pt.outTokenTxs).concat(pt.otherTokenTxs);
   const feeTxs = [];
@@ -89,19 +58,24 @@ function setBaseCurrencySwapTxGross(pt) {
   }
 }
 function setImpliedGrossAndPrices(parentGross, txSet) {
-  let totalAmounts = 0.0;
+  let totalAmounts = BigNumber.from(0.0);
   for (const tx of txSet) {
-    totalAmounts += tx.decimalAmount;
+    totalAmounts = totalAmounts.add(tx.amount);
   }
   for (const tx of txSet) {
-    tx.gross = (parentGross * tx.decimalAmount) / totalAmounts;
+    tx.gross = tx.amount
+      .div(totalAmounts)
+      .mul(parentGross)
+      .toNumber();
   }
 
   //calc prices using the proportional amount parent proceeds
   for (const tx of txSet) {
     tokenPrices.unshift({
       symbol: tx.tokenSymbol,
-      price: parentGross / tx.decimalAmount
+      price: BigNumber.from(tx.gross)
+        .div(tx.amount)
+        .toNumber()
     });
   }
 }
@@ -128,18 +102,18 @@ function setImpliedTxGross(pt) {
     return tx;
   });
   if (!pricesMapped) {
-    console.error("No existing price for sold token can be implied", tx);
+    console.error("No existing price for sold token can be implied", outTxs);
     return;
     //throw new Error("No existing price for sold token can be implied");
   }
   let parentGross = 0.0;
   for (const tx of outTxsPrices) {
-    tx.gross = tx.tokenPrice.price * tx.decimalAmount;
+    tx.gross = tx.amount.mul(tx.tokenPrice.price);
     parentGross += tx.gross;
   }
   setImpliedGrossAndPrices(
     parentGross,
-    pt.inTokenTxs.filter(tx => !tx.amount.eq(0))
+    pt.inTokenTxs.filter(tx => tx.amount.eq(0))
   );
 }
 function setGross(pt) {
@@ -154,8 +128,65 @@ function setGross(pt) {
   }
 }
 
-function TokenTransaction() {
-  this.init = async function(tx, parentTxs) {
+function TokenTransaction(parentTxs) {
+  this.initParentTransaction = async function(parentTxs) {
+    //set parent transaction
+    this.parentTx = parentTxs.find(pt => pt.hash == this.hash);
+    if (!this.parentTx) {
+      //TODO trigger download from etherscan
+      this.parentTx = { hash: this.hash };
+      _initParentTransaction(this.parentTx);
+    }
+
+    this.seqNo =
+      this.parentTx.outTokenTxs.length +
+      this.parentTx.inTokenTxs.length +
+      this.parentTx.otherTokenTxs.length;
+    this.txId = this.hash.substring(2, 8) + "-" + this.seqNo;
+  };
+  this.initTokenTx = async function() {
+    this.action = this.parentTx.methodName;
+    if (baseCurrencies.find(c => c == this.tokenSymbol.toUpperCase())) {
+      const gross = this.decimalAmount;
+      this.gross = gross;
+    } else {
+      this.gross = 0.0;
+    }
+
+    if (!this.toAccount.type || !this.fromAccount.type) {
+      this.action = "UNKNOWN ADDR";
+    } else if (
+      this.toAccount.type.includes("Owned") &&
+      !this.fromAccount.type.includes("Owned")
+    ) {
+      this.parentTx.inTokenTxs.push(this);
+      this.parentTx.usdSpent += this.gross;
+      //assign fees proportionally to non baseCurrency buys/sells
+      if (this.parentTx.toAccount && this.parentTx.toAccount.type == "Income") {
+        this.action += "/INCOME";
+        const tokenPrice = await getPrice(this.tokenSymbol, this.date);
+        console.log(this.hash);
+        this.gross = this.amount.mul(tokenPrice).toNumber();
+      } else {
+        this.action = this.fromName.toLowerCase().includes("spam")
+          ? "SPAM"
+          : this.action + "/BUY";
+      }
+    } else if (
+      this.fromAccount.type.includes("Owned") &&
+      !this.toAccount.type.includes("Owned")
+    ) {
+      this.parentTx.outTokenTxs.push(this);
+      this.parentTx.usdProceeds += this.gross;
+
+      this.action += this.parentTx.toAccount.type == "Gift" ? "/GIFT" : "/SELL";
+    } else {
+      this.action = "TRANSFER";
+      this.gross = 0.0;
+      this.parentTx.otherTokenTxs.push(this);
+    }
+  };
+  this.init = async function(tx) {
     this.toAccount = actions.addImportedAddress({ address: tx.to });
     this.fromAccount = actions.addImportedAddress({ address: tx.from });
     this.tokenSymbol = tx.tokenSymbol;
@@ -164,47 +195,38 @@ function TokenTransaction() {
     this.fromName = this.fromAccount.name;
     //TODO convert amount using token decimal
     this.amount = BigNumber.from(tx.value);
-    this.decimalAmount = toNumberWithDecimals(this.amount, tx.tokenDecimal);
+    //console.log("Setting decimal amount: " + tx.hash);
+    //this.decimalAmount = toNumberWithDecimals(this.amount, tx.tokenDecimal);
 
-    //this.displayAmount = ethers.utils.formatUnits(tx.value, tx.tokenDecimal);
-    this.displayAmount =
-      Math.round(
-        BigNumber.from(tx.value)
-          .mul(100)
-          .div(BigNumber.from(10).pow(tx.tokenDecimal))
-          .toNumber()
-      ) / 100;
-    this.date = new Date(this.timestamp * 1000).toISOString().slice(2, 10);
+    this.displayAmount = ethers.utils.formatUnits(tx.value, tx.tokenDecimal);
+    const parts = this.displayAmount.split(".");
+    if (parts[0].length > 10) {
+      this.displayAmount = parts[0][0];
+      this.displayAmount += "." + parts[0].substring(1) + parts[1];
+      this.displayAmount =
+        this.displayAmount.substring(0, 6) + "*10^" + (parts[0].length - 1);
+    } else if (parts.length > 1 && parts[1].length > 6) {
+      this.displayAmount = parts[0] + "." + parts[1].substring(0, 4);
+    }
+    // this.displayAmount =
+    //   Math.round(
+    //     BigNumber.from(tx.value)
+    //       .mul(100)
+    //       .div(BigNumber.from(10).pow(tx.tokenDecimal))
+    //       .toNumber()
+    //   ) / 100;
+    this.timestamp = parseInt(tx.timeStamp);
+    this.date = new Date(this.timestamp * 1000).toISOString().slice(0, 10);
 
-    let ethPrice = await getPrice("ETH", parseInt(tx.timeStamp));
+    let ethPrice = await getPrice("ETH", this.date.substring(2, 10));
     this.fee =
       Math.round(
         ethers.utils.formatEther(
           BigNumber.from(tx.gasUsed)
             .mul(BigNumber.from(tx.gasPrice))
-            .mul(BigNumber.from(parseFloat(ethPrice) * 100))
+            .mul(BigNumber.from(Math.round(parseFloat(ethPrice)) * 100))
         )
       ) / 100;
-
-    //set parent transaction
-    this.parentTx = parentTxs.find(pt => pt.hash == tx.hash);
-    if (!this.parentTx) {
-      //TODO trigger download from etherscan
-      this.parentTx = { hash: tx.hash };
-      initParentTransaction(this.parentTx);
-    }
-
-    this.seqNo =
-      this.parentTx.outTokenTxs.length +
-      this.parentTx.inTokenTxs.length +
-      this.parentTx.otherTokenTxs.length;
-    this.txId = this.hash.substring(2, 8) + "-" + this.seqNo;
-
-    initTokenTx(this, toAccount, fromAccount);
-    //determine action using parent tx and to/from owned
-    this.timestamp = parseInt(tx.timeStamp);
-    //.replace(/-/g, ""); //new Date(parseInt(tx.timestamp));
-    //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
   };
 }
 
@@ -212,16 +234,18 @@ export const getTokenTransactions = async function() {
   //build tx list
   //fields: tx-seqno, timestamp, short date fee, ethprice, token, action, realized short term gain, realized long term gain,
   //cost basis
-  tokentxs = LocalStorage.getItem("tokenTransactions") ?? [];
+  const tokentxs = LocalStorage.getItem("tokenTransactions") ?? [];
   //start with tx's and insert any token txs
   const mappedTxs = [];
   const parentTxs = await getChainTransactions();
   for (const pt of parentTxs) {
-    initParentTransaction(pt);
+    _initParentTransaction(pt);
   }
   for (const t of tokentxs) {
     const tokenTx = new TokenTransaction();
-    await tokenTx.init(t, parentTxs);
+    await tokenTx.init(t);
+    await tokenTx.initParentTransaction(parentTxs);
+    await tokenTx.initTokenTx(parentTxs);
     mappedTxs.push(tokenTx);
   }
   //distribute baseCurrency costs/proceeds and fees to non baseCurrency
