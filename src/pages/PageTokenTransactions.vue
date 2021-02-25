@@ -9,7 +9,26 @@
       @row-click="click"
       :pagination.sync="pagination"
       :rows-per-page-options="[0]"
-    />
+    >
+      <template v-slot:top-right>
+        <q-input
+          style="width: 400px"
+          filled
+          debounce="500"
+          v-model="accountFilter"
+          label="Filter by
+        Account Name or Type"
+          stack-label
+          dense
+          clearable
+        />
+        <q-toggle
+          class="q-mr-lg"
+          v-model="onlyShowTracked"
+          label="Only Tracked"
+        ></q-toggle>
+      </template>
+    </q-table>
   </q-page>
 </template>
 
@@ -24,12 +43,10 @@ export default {
   data() {
     return {
       accountFilter: "",
-      onlyShowUnNamed: false,
+      onlyShowTracked: true,
       tokenTransactions: Object.freeze([]),
       columns: columns,
-      pagination: {
-        rowsPerPage: 0
-      },
+      page: 1,
       $store: store,
       $actions: actions
     };
@@ -43,12 +60,8 @@ export default {
               ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
             );
 
-      if (this.onlyShowUnNamed) {
-        txs = txs.filter(
-          tx =>
-            tx.toName.substring(0, 2) == "0x" ||
-            tx.fromName.substring(0, 2) == "0x"
-        );
+      if (this.onlyShowTracked) {
+        txs = txs.filter(tx => tx.tracked);
       }
       if (this.accountFilter) {
         txs = txs.filter(
@@ -60,6 +73,20 @@ export default {
         );
       }
       return txs;
+    },
+    pagination: {
+      get() {
+        if (this.$q.screen.height == 0) return { rowsPerPage: 0 };
+        const pixels = this.$q.screen.sm
+          ? this.$q.screen.height
+          : this.$q.screen.height - 50;
+        const rowPixels = pixels - 42 - 28 - 33; //table title, row header, row-footer
+        const rows = Math.floor(rowPixels / 28);
+        return { rowsPerPage: rows, page: this.page };
+      },
+      set(val) {
+        this.page = val.page;
+      }
     }
   },
   methods: {

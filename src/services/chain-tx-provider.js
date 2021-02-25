@@ -4,6 +4,7 @@ import { actions } from "../boot/actions";
 const BigNumber = ethers.BigNumber;
 import getMethodName from "./methods";
 import { LocalStorage } from "quasar";
+import { weiToMoney } from "src/utils/moneyUtils";
 
 export const ChainTransaction = function() {
   this.init = async function(tx) {
@@ -27,14 +28,12 @@ export const ChainTransaction = function() {
     this.date = new Date(this.timestamp * 1000).toISOString().slice(0, 10);
     //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
     this.price = await getPrice("ETH", this.date);
-    this.fee =
-      Math.round(
-        ethers.utils.formatEther(
-          BigNumber.from(tx.gasUsed)
-            .mul(BigNumber.from(tx.gasPrice))
-            .mul(BigNumber.from(Math.round(parseFloat(this.price) * 100)))
-        )
-      ) / 100;
+    this.gross = weiToMoney(BigNumber.from(tx.value), this.price);
+    this.fee = weiToMoney(
+      BigNumber.from(tx.gasUsed).mul(BigNumber.from(tx.gasPrice)),
+      this.price
+    );
+
     return this;
   };
 };
@@ -88,15 +87,22 @@ export const columns = [
   },
   {
     name: "price",
-    label: "price",
+    label: "ETH Price",
     field: "price",
     align: "right",
     format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
   },
   {
     name: "fee",
-    label: "fee",
+    label: "Fee",
     field: "fee",
+    align: "right",
+    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
+  },
+  {
+    name: "gross",
+    label: "Gross",
+    field: "gross",
     align: "right",
     format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
   },

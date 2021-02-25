@@ -2,22 +2,12 @@ import { LocalStorage } from "quasar";
 import { ethers } from "ethers";
 import { getPrice } from "../services/price-provider";
 import { actions } from "../boot/actions";
+import { store } from "../boot/store";
 import { getChainTransactions } from "./chain-tx-provider";
+import { bnToMoney } from "src/utils/moneyUtils";
 const BigNumber = ethers.BigNumber;
-const baseCurrencies = ["USDC", "USDT", "TUSD", "DAI"];
+//const baseCurrencies = ["USDC", "USDT", "TUSD", "DAI"];
 const tokenPrices = [];
-
-function toNumberWithDecimals(bn, decimals) {
-  if (!bn || !decimals) return 0.0;
-  return (
-    Math.round(
-      bn
-        .mul(1000)
-        .div(BigNumber.from(10).pow(decimals))
-        .toNumber()
-    ) / 1000
-  );
-}
 
 function _initParentTransaction(tx) {
   tx.inTokenTxs = [];
@@ -31,6 +21,7 @@ function distributeFee(pt) {
   const allTxs = pt.inTokenTxs.concat(pt.outTokenTxs).concat(pt.otherTokenTxs);
   const feeTxs = [];
   for (const t of allTxs) {
+    if (!t.tracked) continue;
     if (!t.amount.eq(0)) {
       feeTxs.push(t);
     } else {
@@ -93,7 +84,9 @@ function setImpliedTxGross(pt) {
   //no base currency transactions
   //TODO handle price lookups
   //first look for sell in recent prices, if not then buy
-  const outTxs = pt.outTokenTxs.filter(outTx => !outTx.amount.eq(0));
+  const outTxs = pt.outTokenTxs.filter(
+    outTx => !outTx.amount.eq(0) && outTx.tracked
+  );
   if (outTxs.length == 0) return;
   let pricesMapped = true;
   const outTxsPrices = outTxs.map(tx => {
@@ -128,7 +121,7 @@ function setGross(pt) {
   }
 }
 
-function TokenTransaction(parentTxs) {
+function TokenTransaction() {
   this.initParentTransaction = async function(parentTxs) {
     //set parent transaction
     this.parentTx = parentTxs.find(pt => pt.hash == this.hash);
@@ -137,25 +130,33 @@ function TokenTransaction(parentTxs) {
       this.parentTx = { hash: this.hash };
       _initParentTransaction(this.parentTx);
     }
-
-    this.seqNo =
-      this.parentTx.outTokenTxs.length +
-      this.parentTx.inTokenTxs.length +
-      this.parentTx.otherTokenTxs.length;
-    this.txId = this.hash.substring(2, 8) + "-" + this.seqNo;
   };
-  this.initTokenTx = async function() {
+  this.initTokenTx = async function(
+    baseCurrencies,
+    trackedTokens,
+    trackSpentTokens
+  ) {
+    //TODO Clean this up and correctly set spent and proceeds
+
     this.action = this.parentTx.methodName;
-    if (baseCurrencies.find(c => c == this.tokenSymbol.toUpperCase())) {
-      const gross = this.decimalAmount;
-      this.gross = gross;
-    } else {
-      this.gross = 0.0;
-    }
+    this.tracked =
+      trackedTokens.findIndex(tt => tt.tokenSymbol == this.tokenSymbol) > -1;
 
     if (!this.toAccount.type || !this.fromAccount.type) {
       this.action = "UNKNOWN ADDR";
-    } else if (
+      this.tracked = false;
+      return;
+    }
+
+    if (baseCurrencies.find(c => c == this.tokenSymbol.toUpperCase())) {
+      this.gross = bnToMoney(this.amount, 1.0, this.tokenDecimal);
+      this.tracked = true;
+    } else {
+      const tokenPrice = await getPrice(this.tokenSymbol, this.date);
+      this.gross = this.amount.mul(tokenPrice).toNumber();
+    }
+
+    if (
       this.toAccount.type.includes("Owned") &&
       !this.fromAccount.type.includes("Owned")
     ) {
@@ -164,9 +165,6 @@ function TokenTransaction(parentTxs) {
       //assign fees proportionally to non baseCurrency buys/sells
       if (this.parentTx.toAccount && this.parentTx.toAccount.type == "Income") {
         this.action += "/INCOME";
-        const tokenPrice = await getPrice(this.tokenSymbol, this.date);
-        console.log(this.hash);
-        this.gross = this.amount.mul(tokenPrice).toNumber();
       } else {
         this.action = this.fromName.toLowerCase().includes("spam")
           ? "SPAM"
@@ -178,18 +176,28 @@ function TokenTransaction(parentTxs) {
     ) {
       this.parentTx.outTokenTxs.push(this);
       this.parentTx.usdProceeds += this.gross;
-
+      this.tracked = this.tracked || trackSpentTokens;
       this.action += this.parentTx.toAccount.type == "Gift" ? "/GIFT" : "/SELL";
     } else {
+      this.tracked = this.tracked || trackSpentTokens;
       this.action = "TRANSFER";
       this.gross = 0.0;
       this.parentTx.otherTokenTxs.push(this);
     }
+
+    this.tracked =
+      this.tracked && this.tokenSymbol != "ETH" && this.tokenSymbol != "";
+    this.seqNo =
+      this.parentTx.outTokenTxs.length +
+      this.parentTx.inTokenTxs.length +
+      this.parentTx.otherTokenTxs.length;
+    this.txId = this.hash.substring(2, 8) + "-" + this.seqNo;
   };
   this.init = async function(tx) {
     this.toAccount = actions.addImportedAddress({ address: tx.to });
     this.fromAccount = actions.addImportedAddress({ address: tx.from });
     this.tokenSymbol = tx.tokenSymbol;
+    this.tokenDecimal = tx.tokenDecimal;
     this.hash = tx.hash.toLowerCase();
     this.toName = this.toAccount.name;
     this.fromName = this.fromAccount.name;
@@ -238,6 +246,8 @@ export const getTokenTransactions = async function() {
   //start with tx's and insert any token txs
   const mappedTxs = [];
   const parentTxs = await getChainTransactions();
+  const baseCurrencies = store.baseCurrencies.replace(" ", "").split(",");
+  const trackedTokens = store.trackedTokens.replace(" ", "").split(",");
   for (const pt of parentTxs) {
     _initParentTransaction(pt);
   }
@@ -245,7 +255,11 @@ export const getTokenTransactions = async function() {
     const tokenTx = new TokenTransaction();
     await tokenTx.init(t);
     await tokenTx.initParentTransaction(parentTxs);
-    await tokenTx.initTokenTx(parentTxs);
+    await tokenTx.initTokenTx(
+      baseCurrencies,
+      trackedTokens,
+      store.trackSpentTokens
+    );
     mappedTxs.push(tokenTx);
   }
   //distribute baseCurrency costs/proceeds and fees to non baseCurrency

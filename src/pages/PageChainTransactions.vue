@@ -64,9 +64,7 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { getChainTransactions, columns } from "../services/chain-tx-provider";
-import { dom } from "quasar";
 import Vue from "Vue";
-const { height } = dom;
 
 export default {
   name: "PageChainTransactions",

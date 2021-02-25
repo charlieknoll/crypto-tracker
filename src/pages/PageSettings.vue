@@ -9,11 +9,22 @@
         lazy-rules
         :rules="[val => (val && val.length == 34) || 'Invalid API KEY']"
       />
-
+      <q-input
+        filled
+        v-model="baseCurrencies"
+        label="Base Currencies"
+        hint="Comma delimited list (e.g. USDT,TUSD,USCD,DAI)"
+      />
+      <q-input
+        filled
+        v-model="trackedTokens"
+        label="Additional Tracked Tokens (Non Spent)"
+        hint="Comma delimited list (e.g. OMG, KICK, etc)"
+      />
       <q-checkbox
         left-label
-        v-model="autoImport"
-        label="Auto Import Transactions"
+        v-model="trackSpentTokens"
+        label="Track Spent Tokens"
       />
     </q-form>
   </q-page>
@@ -28,6 +39,10 @@ export default {
     return {
       apikey: store.apikey,
       autoImport: store.autoImport,
+      trackedTokens: store.trackedTokens,
+      trackSpentTokens: store.trackSpentTokens,
+      baseCurrencies: store.baseCurrencies,
+
       $store: store,
       $actions: actions
     };
@@ -38,6 +53,17 @@ export default {
     },
     autoImport: function(val) {
       actions.setObservableData("autoImport", val);
+    },
+    baseCurrencies: function(val) {
+      if (!val) val = "";
+      actions.setObservableData("baseCurrencies", val);
+    },
+    trackedTokens: function(val) {
+      if (!val) val = "";
+      actions.setObservableData("trackedTokens", val);
+    },
+    trackSpentTokens: function(val) {
+      actions.setObservableData("trackSpentTokens", val);
     }
   },
   mounted() {
