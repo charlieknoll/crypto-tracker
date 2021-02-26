@@ -42,7 +42,12 @@ async function getAccountTransactions(oa) {
       tx.timestamp = parseInt(tx.timeStamp);
     }
   }
-  return txs;
+  //There will be multiple txs for transfers between owned accounts so tx's must be merged
+  actions.mergeArrayToData(
+    "chainTransactions",
+    txs,
+    (a, b) => a.hash == b.hash
+  );
 }
 export const getTransactions = async function() {
   const ownedAccounts = store.addresses.filter(a => a.type == "Owned");
@@ -50,13 +55,12 @@ export const getTransactions = async function() {
   //loop through "Owned accounts"
   const currentBlock = await getCurrentBlock();
   let tokenTxs = [...(store.tokenTxs ?? [])];
-  let chainTxs = [...(store.chainTxs ?? [])];
 
   for (const oa of ownedAccounts) {
     try {
       //get normal tx's
       lastRequestTime = await throttle(lastRequestTime, 500);
-      chainTxs = chainTxs.concat(await getAccountTransactions(oa));
+      await getAccountTransactions(oa);
       lastRequestTime = await throttle(lastRequestTime, 500);
       tokenTxs = tokenTxs.concat(await getTokenTransactions(oa));
       //setLastBlockSync
@@ -66,9 +70,7 @@ export const getTransactions = async function() {
     }
   }
   actions.setObservableData("addresses", store.addresses);
-  chainTxs.sort((a, b) => a.timestamp - b.timestamp);
   tokenTxs.sort((a, b) => a.timestamp - b.timestamp);
-  actions.setData("chainTransactions", chainTxs);
   actions.setData("tokenTransactions", tokenTxs);
   //send to tx provider
   //get tokenTx's
