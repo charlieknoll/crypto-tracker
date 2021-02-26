@@ -12,3 +12,11 @@ export const bnToMoney = function(bn, unitPrice, decimals) {
 export const weiToMoney = function(bn, ethPrice) {
   return bnToMoney(bn, ethPrice, 18);
 };
+export const bnToFloat = function(bn, decimals) {
+  try {
+    return parseFloat(ethers.utils.formatUnits(bn, decimals));
+  } catch (error) {
+    //kill
+    return 0.0;
+  }
+};

@@ -22,11 +22,7 @@ async function getTokenTransactions(oa) {
       tx.timestamp = parseInt(tx.timeStamp);
     }
   }
-  actions.mergeArrayToData(
-    "tokenTransactions",
-    txs,
-    (a, b) => a.hash == b.hash
-  );
+  return txs;
 }
 async function getAccountTransactions(oa) {
   const normalTxApiUrl =
@@ -46,24 +42,23 @@ async function getAccountTransactions(oa) {
       tx.timestamp = parseInt(tx.timeStamp);
     }
   }
-  actions.mergeArrayToData(
-    "chainTransactions",
-    txs,
-    (a, b) => a.hash == b.hash
-  );
+  return txs;
 }
 export const getTransactions = async function() {
   const ownedAccounts = store.addresses.filter(a => a.type == "Owned");
 
   //loop through "Owned accounts"
   const currentBlock = await getCurrentBlock();
+  let tokenTxs = [...(store.tokenTxs ?? [])];
+  let chainTxs = [...(store.chainTxs ?? [])];
+
   for (const oa of ownedAccounts) {
     try {
       //get normal tx's
       lastRequestTime = await throttle(lastRequestTime, 500);
-      await getAccountTransactions(oa);
+      chainTxs = chainTxs.concat(await getAccountTransactions(oa));
       lastRequestTime = await throttle(lastRequestTime, 500);
-      await getTokenTransactions(oa);
+      tokenTxs = tokenTxs.concat(await getTokenTransactions(oa));
       //setLastBlockSync
       oa.lastBlockSync = currentBlock;
     } catch (err) {
@@ -71,6 +66,10 @@ export const getTransactions = async function() {
     }
   }
   actions.setObservableData("addresses", store.addresses);
+  chainTxs.sort((a, b) => a.timestamp - b.timestamp);
+  tokenTxs.sort((a, b) => a.timestamp - b.timestamp);
+  actions.setData("chainTransactions", chainTxs);
+  actions.setData("tokenTransactions", tokenTxs);
   //send to tx provider
   //get tokenTx's
   //send to tokenTx provider
