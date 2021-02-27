@@ -2,13 +2,23 @@
   <q-page class="" id="pageOpeningPositions">
     <q-table
       title="Opening Positions"
-      :data="history"
+      :data="openingPositions"
       :columns="columns"
       row-key="txId"
       dense
       :pagination.sync="pagination"
       :rows-per-page-options="[0]"
-    />
+    >
+      <template v-slot:top-right>
+        <q-btn
+          color="primary"
+          icon-right="archive"
+          label="Export to csv"
+          no-caps
+        />
+        <q-btn class="q-ml-lg" color="negative" label="Clear" @click="clear" />
+      </template>
+    </q-table>
   </q-page>
 </template>
 
@@ -17,13 +27,15 @@ import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 
 import { columns } from "../services/opening-positions-provider";
+import Vue from "Vue";
+
 export default {
   name: "PageOpeningPositions",
   data() {
     return {
-      filter: "",
-      history: store.openingPositions,
-      columns: columns,
+      accountFilter: "",
+      openingPositions: Object.freeze([]),
+      columns,
       pagination: {
         rowsPerPage: 0
       },
@@ -32,8 +44,8 @@ export default {
     };
   },
   computed: {
-    filteredHistory() {
-      if (this.filter.length == 0) return this.history;
+    filtered() {
+      if (this.accountFilter.length == 0) return this.openingPositions;
       const filter = this.filter;
       const filtered = this.history.filter(function(a) {
         return (
@@ -46,6 +58,17 @@ export default {
 
       return filtered;
     }
+  },
+  methods: {
+    clear() {
+      this.$actions.setData("openingPositions", []);
+      this.openingPositions = [];
+    }
+  },
+  async created() {
+    const openingPositions =
+      (await this.$actions.getData("openingPositions")) ?? [];
+    Vue.set(this, "openingPositions", Object.freeze(openingPositions));
   },
 
   mounted() {

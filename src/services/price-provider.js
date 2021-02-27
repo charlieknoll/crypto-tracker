@@ -8,8 +8,9 @@ coinGeckoSymbolMap["BTC"] = "bitcoin";
 coinGeckoSymbolMap["ETH"] = "ethereum";
 coinGeckoSymbolMap["CRV"] = "curve-dao-token";
 let lastRequestTime = 0;
+let requests = [];
 export const getPrice = async function(symbol, tradeDate) {
-  const prices = actions.getData("prices");
+  const prices = actions.getData("prices") ?? [];
   const tradeDatePrice = prices.find(
     p => p.symbol == symbol && p.tradeDate == tradeDate
   );
@@ -30,7 +31,15 @@ export const getPrice = async function(symbol, tradeDate) {
     tradeDate.substring(8, 10) +
     tradeDate.substring(4, 8) +
     tradeDate.substring(0, 4);
-  lastRequestTime = await throttle(lastRequestTime, 50); //100req's per minute
+  lastRequestTime = await throttle(lastRequestTime, 50);
+  requests.push(lastRequestTime); //100req's per minute
+  const currentTime = new Date().getTime();
+  //requests in last 60
+  requests = requests.filter(r => r > currentTime - 60000);
+  if (requests.length > 50) {
+    await throttle(currentTime, 1000);
+  }
+
   let apiUrl = `https://api.coingecko.com/api/v3/coins/${coinGeckoSymbolMap[symbol]}/history?date=${cgTradeDate}&localization=false`;
   try {
     while (new Date().getTime() - lastRequestTime < 60000) {
@@ -49,7 +58,7 @@ export const getPrice = async function(symbol, tradeDate) {
         actions.setData("prices", prices);
         return price;
       } catch (error) {
-        await throttle(lastRequestTime, 10000);
+        await throttle(new Date().getTime(), 10000);
         continue;
       }
     }

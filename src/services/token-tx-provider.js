@@ -139,7 +139,7 @@ function TokenTransaction() {
 
     if (!this.toAccount.type || !this.fromAccount.type) {
       this.action = "UNKNOWN ADDR";
-      return;
+      //return;
     }
     this.gross = 0.0;
     this.marketGross = 0.0;
@@ -171,7 +171,10 @@ function TokenTransaction() {
     ) {
       this.parentTx.outTokenTxs.push(this);
       this.parentTx.usdProceeds += this.gross;
-      this.action += this.parentTx.toAccount.type == "Gift" ? "/GIFT" : "/SELL";
+      this.action +=
+        !this.parentTx.toAccount || this.parentTx.toAccount.type == "Gift"
+          ? "/GIFT"
+          : "/SELL";
     } else {
       this.action = "TRANSFER";
       this.gross = 0.0;

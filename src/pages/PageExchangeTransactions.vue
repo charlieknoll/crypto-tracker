@@ -23,8 +23,10 @@
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { columns } from "../services/exchange-tx-provider";
+import { columns, getExchangeTrades } from "../services/exchange-tx-provider";
 import { processFile } from "../services/file-handler";
+import Vue from "Vue";
+
 const reader = new FileReader();
 let currentFileName = null;
 reader.onload = async function(event) {
@@ -40,6 +42,7 @@ export default {
   data() {
     return {
       filter: "",
+      exchangeTrades: Object.freeze([]),
       columns,
       files: [],
       groupByDay: true,
@@ -64,9 +67,9 @@ export default {
   },
   computed: {
     filtered() {
-      if (!this.groupByDay) return this.$store.exchangeTrades;
+      if (!this.groupByDay) return this.exchangeTrades;
       const grouped = [];
-      for (const et of this.$store.exchangeTrades) {
+      for (const et of this.exchangeTrades) {
         //find an entry for date/asset
         let dateAsset = grouped.find(
           g => g.asset == et.asset && g.date == et.date
@@ -99,6 +102,10 @@ export default {
       actions.setData("exchangeTrades", []);
       this.files = [];
     }
+  },
+  async created() {
+    const exchangeTrades = await getExchangeTrades();
+    Vue.set(this, "exchangeTrades", Object.freeze(exchangeTrades));
   },
   mounted() {
     window.__vue_mounted = this.name;

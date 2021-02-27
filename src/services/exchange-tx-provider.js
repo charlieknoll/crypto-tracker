@@ -3,6 +3,7 @@ import { actions } from "../boot/actions";
 import { getPrice } from "./price-provider";
 import { floatToMoney } from "../utils/moneyUtils";
 import { store } from "src/boot/store";
+import { LocalStorage } from "quasar";
 const parse = require("csv-parse/lib/sync");
 
 function applyBuyProps(btx, op, price) {
@@ -37,13 +38,14 @@ function applySellProps(btx, op, price) {
 
   return tx;
 }
-export const processExchangeTradesFile = async function(data) {
+export const processExchangeTradesFile = function(data) {
   const stagedData = parse(data, {
     trim: true,
     columns: true,
     skip_empty_lines: true
   });
   const mappedData = [];
+
   for (const op of stagedData) {
     const tradeDate = new Date(op.Date.substring(0, 19));
     const timestamp = tradeDate.getTime() / 1000;
@@ -53,20 +55,23 @@ export const processExchangeTradesFile = async function(data) {
             .id(op.Date + op.Symbol + op.Price + op.Amount + Math.random())
             .substring(2, 9)
         : op.ExchangeId;
-    const date = op.Date.substring(2, 10);
+    const date = op.Date.substring(0, 10);
     const account = op.Account == "" ? op.Memo : op.Account;
+    op.exchangePrice = op.Price;
+    op.exchangeFee = op.Fee;
     if (op.Currency != "USD") {
       //split into a buy tx and a sell tx, converting to USD
-      const price = await getPrice(op.Currency, date);
-      if (price < 0)
-        throw new Error(`Price not found for ${op.Currency}} on ${date}`);
+      const price = 0.0;
       //base tx
       const tx = {
         timestamp,
         date,
         memo: op.Memo,
         account,
-        txId: txId + "-0"
+        txId: txId + "-0",
+        exchangePrice: op.Price,
+        exchangeFee: op.Fee,
+        exchangeCurrency: op.Currency
       };
       mappedData.push(applySellProps(tx, op, price));
       mappedData.push(applyBuyProps(tx, op, price));
@@ -74,7 +79,7 @@ export const processExchangeTradesFile = async function(data) {
       mappedData.push({
         timestamp,
         price: parseFloat(op.Price),
-        date: op.Date.substring(2, 10),
+        date,
         amount: parseFloat(op.Volume),
         memo: op.Memo,
         account,
@@ -83,37 +88,67 @@ export const processExchangeTradesFile = async function(data) {
         asset: op.Symbol,
         action: op.Action.toUpperCase(),
         gross: floatToMoney(parseFloat(op.Price) * parseFloat(op.Volume)),
-        txId
+        txId,
+        exchangePrice: op.Price,
+        exchangeFee: op.Fee,
+        exchangeCurrency: op.Currency
       });
     }
   }
+  actions.mergeArrayToData(
+    "exchangeTrades",
+    mappedData,
+    (a, b) => a.txId == b.txId
+  );
+};
 
-  actions.mergeArrayToData("exchangeTrades", mappedData);
-  console.log(`Addeds ${mappedData.length} exchange transactions`);
+export const getExchangeTrades = async function() {
+  const data = LocalStorage.getItem("exchangeTrades") ?? [];
+  const mappedData = [];
+
+  for (const tx of data) {
+    if (tx.exchangeCurrency != "USD") {
+      const price = await getPrice(tx.exchangeCurrency, tx.date);
+      tx.price =
+        tx.Action == "SELL" ? parseFloat(tx.exchangePrice) * price : price;
+      tx.gross = floatToMoney(tx.price * tx.amount);
+      tx.fee = floatToMoney(parseFloat(tx.exchangeFee) * tx.price);
+    }
+  }
+  return data;
+
   //TODO set running balances
-  const assets = [];
-  const _openingPositions = [...store.openingPositions];
-  for (const op of _openingPositions) {
-    let asset = assets.find(a => a.symbol == op.asset);
-    if (!asset) {
-      asset = { symbol: op.asset, amount: 0.0 };
-      assets.push(asset);
-    }
-    asset.amount += op.amount;
-    op.runningBalance = asset.amount;
-  }
-  const _exchangeTrades = [...store.exchangeTrades];
-  for (const et of _exchangeTrades) {
-    let asset = assets.find(a => a.symbol == et.asset);
-    if (!asset) {
-      asset = { symbol: et.asset, amount: 0.0 };
-      assets.push(asset);
-    }
-    asset.amount += et.action == "BUY" ? et.amount : -et.amount;
-    et.runningBalance = asset.amount;
-  }
-  actions.mergeArrayToData("openingPositions", _openingPositions);
-  actions.mergeArrayToData("exchangeTrades", _exchangeTrades);
+  // const assets = [];
+  // const _openingPositions = [...(actions.getData("openingPositions") ?? [])];
+  // for (const op of _openingPositions) {
+  //   let asset = assets.find(a => a.symbol == op.asset);
+  //   if (!asset) {
+  //     asset = { symbol: op.asset, amount: 0.0 };
+  //     assets.push(asset);
+  //   }
+  //   asset.amount += op.amount;
+  //   op.runningBalance = asset.amount;
+  // }
+  // const _exchangeTrades = [...(actions.getData("exchangeTrades") ?? [])];
+  // for (const et of _exchangeTrades) {
+  //   let asset = assets.find(a => a.symbol == et.asset);
+  //   if (!asset) {
+  //     asset = { symbol: et.asset, amount: 0.0 };
+  //     assets.push(asset);
+  //   }
+  //   asset.amount += et.action == "BUY" ? et.amount : -et.amount;
+  //   et.runningBalance = asset.amount;
+  // }
+  // actions.mergeArrayToData(
+  //   "openingPositions",
+  //   _openingPositions,
+  //   (a, b) => a.txId == b.txId
+  // );
+  // actions.mergeArrayToData(
+  //   "exchangeTrades",
+  //   _exchangeTrades,
+  //   (a, b) => a.txId == b.txId
+  // );
 };
 
 export const columns = [

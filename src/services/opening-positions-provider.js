@@ -14,7 +14,10 @@ export const processOpeningPositionsFile = function(openingData) {
       timestamp: new Date(op.Date).timestamp,
       memo: op.Memo,
       price: parseFloat(op.Price),
-      date: op.Date.substring(2, 10),
+      date: op.Date.substring(0, 10),
+      timestamp: Math.round(
+        new Date(op.Date.substring(0, 10)).getTime() / 1000
+      ),
       amount: parseFloat(op.Volume),
       account: op.Account,
       fee: parseFloat(op.Fee),
@@ -29,7 +32,11 @@ export const processOpeningPositionsFile = function(openingData) {
         .substring(2, 9)
     };
   });
-  actions.mergeArrayToData("openingPositions", mappedOpeningData);
+  actions.mergeArrayToData(
+    "openingPositions",
+    mappedOpeningData,
+    (a, b) => a.txId == b.txId
+  );
 };
 
 export const columns = [

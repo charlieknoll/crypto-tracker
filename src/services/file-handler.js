@@ -1,4 +1,5 @@
 import { processOpeningPositionsFile } from "./opening-positions-provider";
+import { processExchangeTradesFile } from "./exchange-tx-provider";
 const parse = require("csv-parse/lib/sync");
 import Address from "../models/address";
 import { actions } from "../boot/actions";

@@ -29,20 +29,7 @@
           v-model="onlyShowUnNamed"
           label="Only Unnamed"
         ></q-toggle>
-        <q-btn
-          color="primary"
-          icon-right="archive"
-          label="Export to csv"
-          no-caps
-        />
       </template>
-      <!-- <template v-slot:body-cell-error="props">
-        <q-tr :props="props">
-          <q-td :props="props">
-            <q-badge color="red" class="mdi-alert">Error</q-badge>
-          </q-td>
-        </q-tr>
-      </template> -->
       <template v-slot:body-cell-error="props">
         <q-td :props="props">
           <q-chip
@@ -127,11 +114,6 @@ export default {
   async created() {
     const chainTxs = await getChainTransactions();
     Vue.set(this, "chainTransactions", Object.freeze(chainTxs));
-    // const chainTransactions = []
-    // for (const ct of this.$store.chainTransactions) {
-    //   ct.init();
-    // }
-    //actions.setLocalStorage("chainTransactions", this.$store.chainTransactions)
   },
   mounted() {
     window.__vue_mounted = "pageChainTransactions";

@@ -41,6 +41,12 @@
           no-caps
           @click="exportTable"
         />
+        <q-btn
+          class="q-ml-lg"
+          color="negative"
+          label="Clear Unnamed"
+          @click="clearUnnamed"
+        />
       </template>
     </q-table>
   </q-page>
@@ -131,6 +137,12 @@ export default {
           icon: "warning"
         });
       }
+    },
+    clearUnnamed() {
+      const namedAddresses = this.$store.addresses.filter(
+        a => a.name.substring(0, 2) != "0x"
+      );
+      this.addresses = namedAddresses;
     }
   },
   watch: {
