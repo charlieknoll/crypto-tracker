@@ -21,38 +21,37 @@ export const getPrice = async function(symbol, tradeDate) {
   //Get price from Coingecko
   if (!coinGeckoSymbolMap[symbol]) {
     //TODO add to coingecko symbol list without coinid, auto lookup?
-    console.error("Symbol not found: " + symbol);
+    //console.error("Symbol not found: " + symbol);
 
     return 0.0;
   }
-
+  //dd-mm-yyyy
   const cgTradeDate =
-    tradeDate.substring(2, 5) +
-    tradeDate.substring(5, 8) +
+    tradeDate.substring(8, 10) +
+    tradeDate.substring(4, 8) +
     tradeDate.substring(0, 4);
   lastRequestTime = await throttle(lastRequestTime, 50); //100req's per minute
   let apiUrl = `https://api.coingecko.com/api/v3/coins/${coinGeckoSymbolMap[symbol]}/history?date=${cgTradeDate}&localization=false`;
   try {
     while (new Date().getTime() - lastRequestTime < 60000) {
-      const result = await axios.get(apiUrl);
-      if (result.status != 200) {
-        //throw new Error("Invalid return status: " + result.data.message);
-        console.log("Throttling for 10 seconds...");
+      try {
+        const result = await axios.get(apiUrl);
+        const price = parseFloat(
+          result.data.market_data
+            ? result.data.market_data.current_price.usd
+            : 0.0
+        );
+        prices.push({
+          symbol,
+          tradeDate,
+          price
+        });
+        actions.setData("prices", prices);
+        return price;
+      } catch (error) {
         await throttle(lastRequestTime, 10000);
         continue;
       }
-      const price = parseFloat(
-        result.data.market_data
-          ? result.data.market_data.current_price.usd
-          : 0.0
-      );
-      prices.push({
-        symbol,
-        tradeDate,
-        price
-      });
-      actions.setData("prices", prices);
-      return price;
     }
   } catch (err) {
     console.log("error getting price: ", err);

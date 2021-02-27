@@ -14,6 +14,7 @@
       <q-btn label="Import Transactions" @click="importTransactions"></q-btn>
       <q-btn label="Clear Transactions" @click="clearTransactions"></q-btn>
       <q-btn label="Clear Price History" @click="clearPriceHistory"></q-btn>
+      <q-btn label="Clear CRV History" @click="clearCurveHistory"></q-btn>
 
       <br />
       <p>Current block: {{ currentBlock }}</p>
@@ -77,6 +78,10 @@ export default {
     },
     clearPriceHistory() {
       this.$actions.setData("prices", []);
+    },
+    clearCurveHistory() {
+      const prices = actions.getData("prices").filter(p => p.symbol != "CRV");
+      this.$actions.setData("prices", prices);
     },
     clearTransactions() {
       this.$actions.setData("chainTransactions", []);

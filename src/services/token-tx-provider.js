@@ -139,11 +139,14 @@ function TokenTransaction() {
       this.action = "UNKNOWN ADDR";
       return;
     }
-
+    this.gross = 0.0;
+    this.marketGross = 0.0;
     if (baseCurrencies.find(c => c == this.tokenSymbol.toUpperCase())) {
       this.gross = bnToFloat(this.amount, this.tokenDecimal);
-    } else {
-      this.gross = 0.0;
+    } else if (this.tracked) {
+      this.marketGross =
+        (await getPrice(this.tokenSymbol, this.date)) *
+        bnToFloat(this.amount, this.tokenDecimal);
     }
 
     if (
@@ -202,7 +205,7 @@ function TokenTransaction() {
     }
     this.timestamp = parseInt(tx.timeStamp);
     this.date = new Date(this.timestamp * 1000).toISOString().slice(0, 10);
-    let ethPrice = await getPrice("ETH", this.date.substring(2, 10));
+    let ethPrice = await getPrice("ETH", this.date);
     this.fee =
       Math.round(
         ethers.utils.formatEther(
