@@ -35,12 +35,12 @@ function distributeFee(pt) {
 //For only base currency tx's
 function setBaseCurrencySwapTxGross(pt) {
   //take the abs of in and out difference
-  const additionalFee = Math.abs(pt.usdProceeds - pt.usdSpent);
+  const additionalFee = pt.usdProceeds - pt.usdSpent;
 
   //distribute it as fees on the out txs proportional to value
   const ptGross = pt.usdProceeds > pt.usdSpent ? pt.usdSpent : pt.usdProceeds;
   const txSet =
-    pt.usdProceeds < pt.usdSpent
+    pt.usdProceeds > pt.usdSpent
       ? pt.inTokenTxs.filter(inTx => !inTx.amount.eq(0))
       : pt.outTokenTxs.filter(outTx => !outTx.amount.eq(0));
   for (const tx of txSet) {
@@ -55,6 +55,7 @@ function setImpliedGrossAndPrices(parentGross, txSet) {
   }
   for (const tx of txSet) {
     tx.gross = (tx.decimalAmount / totalAmounts) * parentGross;
+    tx.price = tx.gross / tx.decimalAmount;
   }
 
   //calc prices using the proportional amount parent proceeds
@@ -62,7 +63,7 @@ function setImpliedGrossAndPrices(parentGross, txSet) {
     ///if (!tx.tracked) continue;
     tokenPrices.unshift({
       symbol: tx.tokenSymbol,
-      price: tx.gross / tx.decimalAmount
+      price: tx.price
     });
   }
 }
@@ -96,6 +97,7 @@ async function setImpliedTxGross(pt) {
   }
   let parentGross = 0.0;
   for (const tx of outTxs) {
+    tx.price = tx.tokenPrice.price;
     tx.gross = tx.decimalAmount * tx.tokenPrice.price;
     parentGross += tx.gross;
   }
@@ -143,10 +145,10 @@ function TokenTransaction() {
     this.marketGross = 0.0;
     if (baseCurrencies.find(c => c == this.tokenSymbol.toUpperCase())) {
       this.gross = bnToFloat(this.amount, this.tokenDecimal);
+      this.price = 1.0;
     } else if (this.tracked) {
-      this.marketGross =
-        (await getPrice(this.tokenSymbol, this.date)) *
-        bnToFloat(this.amount, this.tokenDecimal);
+      this.price = await getPrice(this.tokenSymbol, this.date);
+      this.gross = this.price * bnToFloat(this.amount, this.tokenDecimal);
     }
 
     if (
@@ -311,24 +313,24 @@ export const columns = [
     field: "displayAmount",
     align: "right"
   },
-  // {
-  //   name: "price",
-  //   label: "Implied USD Total",
-  //   field: "gross",
-  //   align: "right",
-  //   format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
-  // },
   {
-    name: "fee",
-    label: "Fee",
-    field: "fee",
+    name: "price",
+    label: "Price",
+    field: "price",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
   },
   {
     name: "gross",
     label: "Gross",
     field: "gross",
+    align: "right",
+    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+  },
+  {
+    name: "fee",
+    label: "Fee",
+    field: "fee",
     align: "right",
     format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
   }

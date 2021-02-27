@@ -9,6 +9,7 @@ import { weiToMoney } from "src/utils/moneyUtils";
 export const ChainTransaction = function() {
   this.init = async function(tx) {
     this.toAccount = actions.addImportedAddress({ address: tx.to });
+    this.type = this.toAccount.type;
     this.fromAccount = actions.addImportedAddress({ address: tx.from });
     this.hash = tx.hash.toLowerCase();
     this.txId = tx.hash.substring(0, 8);
@@ -76,6 +77,12 @@ export const columns = [
     name: "method",
     label: "Method",
     field: "methodName",
+    align: "left"
+  },
+  {
+    name: "type",
+    label: "Type",
+    field: "type",
     align: "left"
   },
   {
