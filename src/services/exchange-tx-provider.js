@@ -110,35 +110,34 @@ export const getExchangeTrades = async function() {
     if (tx.exchangeCurrency != "USD") {
       const price = await getPrice(tx.exchangeCurrency, tx.date);
       tx.price =
-        tx.Action == "SELL" ? parseFloat(tx.exchangePrice) * price : price;
+        tx.action == "SELL" ? price : parseFloat(tx.exchangePrice) * price;
       tx.gross = floatToMoney(tx.price * tx.amount);
       tx.fee = floatToMoney(parseFloat(tx.exchangeFee) * tx.price);
     }
   }
-  return data;
 
   //TODO set running balances
-  // const assets = [];
-  // const _openingPositions = [...(actions.getData("openingPositions") ?? [])];
-  // for (const op of _openingPositions) {
-  //   let asset = assets.find(a => a.symbol == op.asset);
-  //   if (!asset) {
-  //     asset = { symbol: op.asset, amount: 0.0 };
-  //     assets.push(asset);
-  //   }
-  //   asset.amount += op.amount;
-  //   op.runningBalance = asset.amount;
-  // }
-  // const _exchangeTrades = [...(actions.getData("exchangeTrades") ?? [])];
-  // for (const et of _exchangeTrades) {
-  //   let asset = assets.find(a => a.symbol == et.asset);
-  //   if (!asset) {
-  //     asset = { symbol: et.asset, amount: 0.0 };
-  //     assets.push(asset);
-  //   }
-  //   asset.amount += et.action == "BUY" ? et.amount : -et.amount;
-  //   et.runningBalance = asset.amount;
-  // }
+  const assets = [];
+  const _openingPositions = [...(actions.getData("openingPositions") ?? [])];
+  for (const op of _openingPositions) {
+    let asset = assets.find(a => a.symbol == op.asset);
+    if (!asset) {
+      asset = { symbol: op.asset, amount: 0.0 };
+      assets.push(asset);
+    }
+    asset.amount += op.amount;
+    op.runningBalance = asset.amount;
+  }
+  //const _exchangeTrades = [...(actions.getData("exchangeTrades") ?? [])];
+  for (const et of data) {
+    let asset = assets.find(a => a.symbol == et.asset);
+    if (!asset) {
+      asset = { symbol: et.asset, amount: 0.0 };
+      assets.push(asset);
+    }
+    asset.amount += et.action == "BUY" ? et.amount : -et.amount;
+    et.runningBalance = asset.amount;
+  }
   // actions.mergeArrayToData(
   //   "openingPositions",
   //   _openingPositions,
@@ -149,6 +148,7 @@ export const getExchangeTrades = async function() {
   //   _exchangeTrades,
   //   (a, b) => a.txId == b.txId
   // );
+  return data;
 };
 
 export const columns = [

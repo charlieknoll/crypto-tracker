@@ -13,7 +13,7 @@
         filled
         v-model="baseCurrencies"
         label="Base Currencies"
-        hint="Comma delimited list (e.g. USDT,TUSD,USCD,DAI)"
+        hint="Comma delimited list (e.g. USDT, TUSD, USDC, DAI)"
       />
       <q-input
         filled

@@ -81,7 +81,9 @@ export default {
             amount: 0.0,
             fee: 0.0,
             gross: 0.0,
-            account: ""
+            account: "",
+            action: 0,
+            txId: "g-"
           };
           grouped.push(dateAsset);
         }
@@ -91,6 +93,8 @@ export default {
         dateAsset.gross += et.action == "BUY" ? et.gross : -et.gross;
         dateAsset.runningBalance = et.runningBalance;
         dateAsset.price = dateAsset.gross / dateAsset.amount;
+        dateAsset.action += 1;
+        dateAsset.txId = "g-" + et.txId.substring(0, 14);
         if (!dateAsset.account.includes(et.account))
           dateAsset.account += et.account + ",";
       }
