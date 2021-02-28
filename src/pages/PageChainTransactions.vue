@@ -93,7 +93,7 @@ export default {
             tx.fromName.toLowerCase().includes(this.accountFilter.toLowerCase())
         );
       }
-      return txs;
+      return Object.freeze(txs);
     },
     tableHeight() {
       if (this.$q.screen.height == 0) return;

@@ -1,7 +1,7 @@
 <template>
-  <q-page class="" id="pageTokenTransactions">
+  <q-page class="" id="pageRunningBalances">
     <q-table
-      title="Token Transactions"
+      title="Running Balances"
       :data="filtered"
       :columns="columns"
       row-key="txId"
@@ -16,18 +16,12 @@
           style="width: 400px"
           filled
           debounce="500"
-          v-model="accountFilter"
-          label="Filter by
-        Account Name or Type"
+          v-model="symbolFilter"
+          label="Symbol (e.g. BTC, ETH, CRV...)"
           stack-label
           dense
           clearable
         />
-        <q-toggle
-          class="q-mr-lg"
-          v-model="onlyShowTracked"
-          label="Only Tracked"
-        ></q-toggle>
       </template>
     </q-table>
   </q-page>
@@ -36,16 +30,18 @@
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { getTokenTransactions, columns } from "../services/token-tx-provider";
+import {
+  getRunningBalances,
+  columns
+} from "../services/running-balance-provider";
 import Vue from "Vue";
 
 export default {
   name: "PageTokenTransactions",
   data() {
     return {
-      accountFilter: "",
-      onlyShowTracked: true,
-      tokenTransactions: Object.freeze([]),
+      symbolFilter: "",
+      runningBalances: Object.freeze([]),
       columns: columns,
       page: 1,
       $store: store,
@@ -56,22 +52,12 @@ export default {
     filtered() {
       let txs =
         this.$store.taxYear == "All"
-          ? this.tokenTransactions
-          : this.tokenTransactions.filter(
-              ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
+          ? this.runningBalances
+          : this.runningBalances.filter(
+              tx => parseInt(tx.date.substring(0, 4)) == this.$store.taxYear
             );
-
-      if (this.onlyShowTracked) {
-        txs = txs.filter(tx => tx.tracked);
-      }
-      if (this.accountFilter) {
-        txs = txs.filter(
-          tx =>
-            tx.toName
-              .toLowerCase()
-              .includes(this.accountFilter.toLowerCase()) ||
-            tx.fromName.toLowerCase().includes(this.accountFilter.toLowerCase())
-        );
+      if (this.symbolFilter) {
+        txs = txs.filter(tx => tx.symbol == this.symbolFilter.toUpperCase());
       }
       return Object.freeze(txs);
     },
@@ -101,13 +87,15 @@ export default {
   methods: {
     click(evt, row, index) {
       if (evt.ctrlKey) {
-        window.open("https://etherscan.io/tx/" + row.hash);
+        if (row.hash) {
+          window.open("https://etherscan.io/tx/" + row.hash);
+        }
       }
     }
   },
   async created() {
-    const tokenTxs = await getTokenTransactions();
-    Vue.set(this, "tokenTransactions", Object.freeze(tokenTxs));
+    const runningBalances = await getRunningBalances();
+    Vue.set(this, "runningBalances", Object.freeze(runningBalances));
   },
   mounted() {
     window.__vue_mounted = "PageTokenTransactions";
