@@ -49,6 +49,33 @@ async function getAccountTransactions(oa) {
     (a, b) => a.hash == b.hash
   );
 }
+
+async function getAccountInternalTransactions(oa) {
+  const internalTxApiUrl =
+    "https://api.etherscan.io/api?module=account&action=txlistinternal&address=" +
+    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.apikey}`;
+
+  const result = await axios.get(internalTxApiUrl);
+  if (
+    result.data.status != "1" &&
+    result.data.message != "No transactions found"
+  ) {
+    throw new Error("Invalid return status: " + result.data.message);
+  }
+  const txs = result.data.result;
+  for (const tx of txs) {
+    if (tx.timeStamp) {
+      tx.timestamp = parseInt(tx.timeStamp);
+    }
+  }
+  //There will be multiple txs for transfers between owned accounts so tx's must be merged
+  actions.mergeArrayToData(
+    "internalTransactions",
+    txs,
+    (a, b) => a.hash == b.hash
+  );
+}
+
 export const getTransactions = async function() {
   const ownedAccounts = store.addresses.filter(a => a.type == "Owned");
 
@@ -61,6 +88,8 @@ export const getTransactions = async function() {
       //get normal tx's
       lastRequestTime = await throttle(lastRequestTime, 500);
       await getAccountTransactions(oa);
+      lastRequestTime = await throttle(lastRequestTime, 500);
+      await getAccountInternalTransactions(oa);
       lastRequestTime = await throttle(lastRequestTime, 500);
       tokenTxs = tokenTxs.concat(await getTokenTransactions(oa));
       //setLastBlockSync

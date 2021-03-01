@@ -21,9 +21,18 @@ export const processExchangeTradesFile = function(data) {
       throw new Error("Invalid action in trade data.");
     }
     const txId =
-      op.ExchangeId == ""
+      op.ExchangeId.trim() == ""
         ? ethers.utils
-            .id(op.Date + op.Symbol + op.Price + op.Amount + Math.random())
+            .id(
+              op.Date +
+                op.Action +
+                op.Account +
+                op.Currency +
+                op.Symbol +
+                op.Price +
+                op.Amount +
+                op.ExchangeId
+            )
             .substring(2, 12)
         : op.ExchangeId;
     const date = op.Date.substring(0, 10);
@@ -49,6 +58,7 @@ export const processExchangeTradesFile = function(data) {
     mappedData,
     (a, b) => a.txId == b.txId
   );
+  return mappedData.length;
 };
 
 export const getExchangeTrades = async function() {

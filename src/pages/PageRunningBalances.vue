@@ -22,6 +22,16 @@
           dense
           clearable
         />
+        <q-toggle
+          class="q-mr-lg"
+          v-model="onlyShowEnding"
+          label="Ending"
+        ></q-toggle>
+        <q-toggle
+          class="q-mr-lg"
+          v-model="onlyShowEndingAccount"
+          label="Ending Account"
+        ></q-toggle>
       </template>
     </q-table>
   </q-page>
@@ -33,7 +43,7 @@ import { actions } from "../boot/actions";
 import {
   getRunningBalances,
   columns
-} from "../services/running-balance-provider";
+} from "../services/running-balances-provider";
 import Vue from "Vue";
 
 export default {
@@ -41,6 +51,8 @@ export default {
   data() {
     return {
       symbolFilter: "",
+      onlyShowEnding: false,
+      onlyShowEndingAccount: false,
       runningBalances: Object.freeze([]),
       columns: columns,
       page: 1,
@@ -57,7 +69,13 @@ export default {
               tx => parseInt(tx.date.substring(0, 4)) == this.$store.taxYear
             );
       if (this.symbolFilter) {
-        txs = txs.filter(tx => tx.symbol == this.symbolFilter.toUpperCase());
+        txs = txs.filter(tx => tx.asset == this.symbolFilter.toUpperCase());
+      }
+      if (this.onlyShowEndingAccount) {
+        txs = txs.filter(tx => tx.endingAccount);
+      }
+      if (this.onlyShowEnding) {
+        txs = txs.filter(tx => tx.ending);
       }
       return Object.freeze(txs);
     },

@@ -111,6 +111,12 @@ const menuList = [
     to: "/exchange-transactions"
   },
   {
+    icon: "mdi-note-text-outline",
+    label: "Running Balances",
+    separator: false,
+    to: "/running-balances"
+  },
+  {
     icon: "mdi-cash-multiple",
     label: "Income",
     separator: false,

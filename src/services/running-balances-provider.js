@@ -1,14 +1,11 @@
-import { actions } from "../boot/actions";
-import { getPrice } from "./price-provider";
-import { floatToMoney } from "../utils/moneyUtils";
 import { getChainTransactions } from "./chain-tx-provider";
 import { getTokenTransactions } from "./token-tx-provider";
 import { getExchangeTrades } from "./exchange-tx-provider";
+import { actions } from "../boot/actions";
 
 export const getRunningBalances = async function() {
-  const mappedData = [];
-  const openingPositions =
-    (await this.$actions.getData("openingPositions")) ?? [];
+  let mappedData = [];
+  const openingPositions = (await actions.getData("openingPositions")) ?? [];
   const chainTransactions = await getChainTransactions();
   const tokenTransactions = await getTokenTransactions();
   const exchangeTrades = await getExchangeTrades();
@@ -21,32 +18,111 @@ export const getRunningBalances = async function() {
       date: tx.date,
       amount: tx.amount,
       asset: tx.asset,
-      price: tx.price
+      price: tx.price,
+      type: "Open"
     });
   }
-
+  for (const tx of chainTransactions) {
+    if (tx.fromName == "GENESIS") continue;
+    if (tx.toAccount.type.toLowerCase().includes("owned")) {
+      mappedData.push({
+        txId: "chain-in-" + tx.txId,
+        timestamp: tx.timestamp,
+        account: tx.toAccount.name,
+        date: tx.date,
+        amount: tx.ethAmount,
+        asset: "ETH",
+        price: tx.price,
+        type: "Chain-in",
+        hash: tx.hash
+      });
+    }
+    if (tx.fromAccount.type.toLowerCase().includes("owned")) {
+      mappedData.push({
+        txId: "chain-out-" + tx.txId,
+        timestamp: tx.timestamp,
+        account: tx.fromAccount.name,
+        date: tx.date,
+        amount: -tx.ethAmount - tx.ethGasFee,
+        asset: "ETH",
+        price: tx.price,
+        type: "Chain-out",
+        hash: tx.hash
+      });
+    }
+  }
+  const _tokenTransactions = tokenTransactions.filter(tt => tt.tracked);
+  for (const tx of _tokenTransactions) {
+    if (tx.toAccount.name.toLowerCase().includes("owned")) {
+      mappedData.push({
+        txId: "token-in-" + tx.txId,
+        timestamp: tx.timestamp,
+        account: tx.toAccount.name,
+        date: tx.date,
+        amount: tx.decimalAmount,
+        asset: tx.tokenSymbol,
+        price: tx.price,
+        type: "Token-in",
+        hash: tx.hash
+      });
+    }
+    if (tx.fromAccount.name.toLowerCase().includes("owned")) {
+      mappedData.push({
+        txId: "token-out-" + tx.txId,
+        timestamp: tx.timestamp,
+        account: tx.fromAccount.name,
+        date: tx.date,
+        amount: -tx.decimalAmount,
+        asset: tx.tokenSymbol,
+        price: tx.price,
+        type: "Token-out",
+        hash: tx.hash
+      });
+    }
+  }
+  for (const tx of exchangeTrades) {
+    mappedData.push({
+      txId: "exchange-" + tx.txId.substring(0, 13),
+      timestamp: tx.timestamp,
+      account: tx.account,
+      date: tx.date,
+      amount: tx.action == "SELL" ? -tx.amount : tx.amount,
+      asset: tx.asset,
+      price: tx.price,
+      type: tx.action
+    });
+  }
+  mappedData = mappedData.sort((a, b) => a.timestamp - b.timestamp);
   //Sort by timestamp
   //TODO set running balances
   const assets = [];
-  const _openingPositions = [...(actions.getData("openingPositions") ?? [])];
-  for (const op of _openingPositions) {
-    let asset = assets.find(a => a.symbol == op.asset);
+  const accountAssets = [];
+
+  for (const tx of mappedData) {
+    let asset = assets.find(a => a.symbol == tx.asset);
     if (!asset) {
-      asset = { symbol: op.asset, amount: 0.0 };
+      asset = { symbol: tx.asset, amount: 0.0 };
       assets.push(asset);
     }
-    asset.amount += op.amount;
-    op.runningBalance = asset.amount;
+    asset.amount += tx.amount;
+    tx.runningBalance = asset.amount;
+    asset.endingTx = tx;
+    let accountAsset = accountAssets.find(
+      a => a.symbol == tx.asset && a.account == tx.account
+    );
+    if (!accountAsset) {
+      accountAsset = { symbol: tx.asset, amount: 0.0, account: tx.account };
+      accountAssets.push(accountAsset);
+    }
+    accountAsset.amount += tx.amount;
+    accountAsset.endingTx = tx;
+    tx.runningAccountBalance = accountAsset.amount;
   }
-  //const _exchangeTrades = [...(actions.getData("exchangeTrades") ?? [])];
-  for (const et of mappedData) {
-    let asset = assets.find(a => a.symbol == et.asset);
-    if (!asset) {
-      asset = { symbol: et.asset, amount: 0.0 };
-      assets.push(asset);
-    }
-    asset.amount += et.action == "BUY" ? et.amount : -et.amount;
-    et.runningBalance = asset.amount;
+  for (const aa of accountAssets) {
+    aa.endingTx.endingAccount = true;
+  }
+  for (const aa of assets) {
+    aa.endingTx.ending = true;
   }
   return mappedData;
 };
@@ -77,9 +153,9 @@ export const columns = [
     align: "left"
   },
   {
-    name: "action",
-    label: "Action",
-    field: "action",
+    name: "type",
+    label: "Type",
+    field: "type",
     align: "left"
   },
   {
@@ -97,18 +173,11 @@ export const columns = [
     format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
   },
   {
-    name: "fee",
-    label: "Fee",
-    field: "fee",
+    name: "runningAccountBalance",
+    label: "Running Acct Balance",
+    field: "runningAccountBalance",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
-  },
-  {
-    name: "gross",
-    label: "Gross",
-    field: "gross",
-    align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`
   },
   {
     name: "runningBalance",

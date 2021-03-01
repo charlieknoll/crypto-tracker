@@ -26,19 +26,9 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { columns, getExchangeTrades } from "../services/exchange-tx-provider";
-import { processFile } from "../services/file-handler";
+import { processFiles } from "../services/file-handler";
 import Vue from "Vue";
 
-const reader = new FileReader();
-let currentFileName = null;
-reader.onload = async function(event) {
-  const result = await processFile(
-    currentFileName,
-    atob(event.target.result.split("base64,")[1])
-  );
-  currentFileName = null;
-  //console.log(atob(event.target.result.split("base64,")[1]));
-};
 export default {
   name: "PageExchangeTransactions",
   data() {
@@ -56,15 +46,13 @@ export default {
     };
   },
   watch: {
-    files: function(val) {
-      for (const f of val) {
-        const interval = setInterval(() => {
-          if (currentFileName != null) return;
-          clearInterval(interval);
-          currentFileName = f.name;
-          reader.readAsDataURL(f);
-        }, 400);
-      }
+    files: async function(val) {
+      if (val && val.length == 0) return;
+      if (val && val.length) this.$store.importing = true;
+      await processFiles(val);
+      this.$store.importing = false;
+      await this.load();
+      this.files = [];
     }
   },
   computed: {
@@ -120,11 +108,14 @@ export default {
       actions.setData("exchangeTrades", []);
       this.exchangeTrades = [];
       this.files = [];
+    },
+    async load() {
+      const exchangeTrades = await getExchangeTrades();
+      Vue.set(this, "exchangeTrades", Object.freeze(exchangeTrades));
     }
   },
   async created() {
-    const exchangeTrades = await getExchangeTrades();
-    Vue.set(this, "exchangeTrades", Object.freeze(exchangeTrades));
+    await this.load();
   },
   mounted() {
     window.__vue_mounted = this.name;

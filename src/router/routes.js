@@ -34,6 +34,11 @@ const routes = [
         component: () => import("pages/PageExchangeTransactions.vue")
       },
       {
+        name: "running-balances",
+        path: "running-balances",
+        component: () => import("pages/PageRunningBalances.vue")
+      },
+      {
         name: "capital-gains",
         path: "capital-gains",
         component: () => import("pages/PageCapitalGains.vue")

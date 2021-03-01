@@ -4,7 +4,7 @@ import { actions } from "../boot/actions";
 const BigNumber = ethers.BigNumber;
 import getMethodName from "./methods";
 import { LocalStorage } from "quasar";
-import { weiToMoney } from "src/utils/moneyUtils";
+import { weiToMoney, bnToFloat } from "src/utils/moneyUtils";
 
 export const ChainTransaction = function() {
   this.init = async function(tx) {
@@ -13,12 +13,17 @@ export const ChainTransaction = function() {
     this.fromAccount = actions.addImportedAddress({ address: tx.from });
     this.hash = tx.hash.toLowerCase();
     this.txId = tx.hash.substring(0, 8);
+    if (tx.seqNo) {
+      this.hash += "-" + tx.seqNo;
+      this.txId += "-" + tx.seqNo;
+    }
 
     this.toName = this.toAccount ? this.toAccount.name : tx.to.substring(0, 8);
     this.isError = tx.isError == "1";
     this.fromName = this.fromAccount
       ? this.fromAccount.name
       : tx.from.substring(0, 8);
+    this.ethAmount = bnToFloat(BigNumber.from(tx.value), 18);
     this.amount = ethers.utils.formatEther(BigNumber.from(tx.value)) + " ETH";
     this.methodName = getMethodName(tx.input);
     //TODO handle income and spending if necessary
@@ -30,19 +35,42 @@ export const ChainTransaction = function() {
     //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
     this.price = await getPrice("ETH", this.date);
     this.gross = weiToMoney(BigNumber.from(tx.value), this.price);
-    this.fee = weiToMoney(
-      BigNumber.from(tx.gasUsed).mul(BigNumber.from(tx.gasPrice)),
-      this.price
-    );
+    this.ethGasFee =
+      tx.gasUsed == "0"
+        ? 0.0
+        : bnToFloat(
+            BigNumber.from(tx.gasUsed).mul(BigNumber.from(tx.gasPrice)),
+            18
+          );
+    this.fee =
+      tx.gasUsed == "0"
+        ? 0.0
+        : weiToMoney(
+            BigNumber.from(tx.gasUsed).mul(BigNumber.from(tx.gasPrice)),
+            this.price
+          );
 
     return this;
   };
 };
 export const getChainTransactions = async function() {
   const data = LocalStorage.getItem("chainTransactions") ?? [];
+  const internalTransactions =
+    LocalStorage.getItem("internalTransactions") ?? [];
+  let hash;
+  let seqNo = 0;
+  for (const it of internalTransactions) {
+    if (it.hash != hash) seqNo = 0;
+    hash = it.hash;
+    seqNo += 1;
+    it.seqNo = seqNo;
+  }
+  data.push(...internalTransactions);
+  data.sort((a, b) => a.timestamp - b.timestamp);
   const mappedTxs = [];
   for (const t of data) {
     const tx = new ChainTransaction();
+    //console.log(t.hash);
     await tx.init(t);
     mappedTxs.push(tx);
   }
