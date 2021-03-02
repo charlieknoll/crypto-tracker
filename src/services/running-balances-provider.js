@@ -38,7 +38,10 @@ export const getRunningBalances = async function() {
       timestamp: tx.timestamp,
       account: tx.fromAccount,
       date: tx.date,
-      amount: -tx.amount,
+      amount:
+        tx.asset == tx.transferFeeCurrency
+          ? -tx.amount - tx.transferFee
+          : -tx.amount,
       asset: tx.asset,
       type: "Transfer Out"
     });
@@ -103,13 +106,17 @@ export const getRunningBalances = async function() {
     }
   }
   for (const tx of exchangeTrades) {
+    let amount = tx.action == "SELL" ? -tx.amount : tx.amount;
+    if (tx.feeCurrency == tx.asset) {
+      amount -= tx.exchangeFee;
+    }
     mappedData.push({
       txId:
         "Ex-" + (tx.action == "SELL" ? "O-" : "I-") + tx.txId.substring(0, 13),
       timestamp: tx.timestamp,
       account: tx.account,
       date: tx.date,
-      amount: tx.action == "SELL" ? -tx.amount : tx.amount,
+      amount,
       asset: tx.asset,
       price: tx.price,
       type: tx.action

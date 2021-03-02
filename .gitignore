@@ -39,3 +39,4 @@ src/data/bitcoin.tax/
 src/data/coinbase/
 src/data/exchangetxs.json
 src/services/addresses.js
+src/data/

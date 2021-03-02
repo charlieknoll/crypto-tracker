@@ -20,9 +20,13 @@ export const processOffchainTransfersFile = function(tranfers) {
       fromAccount: t.FromAccount,
       toAccount: t.ToAccount,
       asset: t.Symbol,
-      txId: ethers.utils
-        .id(t.Date + t.Symbol + t.ToAccount + t.FromAccount + t.Volume)
-        .substring(2, 9)
+      transferFee: parseFloat(t.Fee),
+      transferFeeCurrency: t.FeeCurrency,
+      txId: t.Id.trim()
+        ? t.Id.trim()
+        : ethers.utils
+            .id(t.Date + t.Symbol + t.ToAccount + t.FromAccount + t.Volume)
+            .substring(2, 9)
     };
   });
   actions.mergeArrayToData(
@@ -39,6 +43,12 @@ export const columns = [
     label: "Transfer Date",
     field: "date",
     align: "left"
+  },
+  {
+    name: "timestamp",
+    label: "Timestamp",
+    field: "timestamp",
+    align: "right"
   },
   {
     name: "txId",
@@ -69,5 +79,17 @@ export const columns = [
     label: "Amount",
     field: "amount",
     align: "right"
+  },
+  {
+    name: "transferFee",
+    label: "Fee",
+    field: "transferFee",
+    align: "right"
+  },
+  {
+    name: "transferFeeCurrency",
+    label: "Fee Currency",
+    field: "transferFeeCurrency",
+    align: "left"
   }
 ];

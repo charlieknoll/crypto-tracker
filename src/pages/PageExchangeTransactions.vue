@@ -1,7 +1,7 @@
 <template>
   <q-page class="" id="pageExchangeTransactions">
     <q-table
-      title="Exchange Transactions"
+      :title="'Exchange Transactions - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
       row-key="txId"
@@ -17,8 +17,7 @@
           filled
           debounce="500"
           v-model="accountFilter"
-          label="Filter by
-        Account Name or Type"
+          label="Account Name"
           stack-label
           dense
           clearable
@@ -60,7 +59,11 @@ export default {
           : this.exchangeTrades.filter(
               ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
             );
-
+      if (this.accountFilter.length == 0) return txs;
+      const filter = this.accountFilter.toLowerCase();
+      txs = txs.filter(function(t) {
+        return (t.account ?? "").toLowerCase() == filter;
+      });
       if (!this.groupByDay) return txs;
       const grouped = [];
       for (const et of txs) {

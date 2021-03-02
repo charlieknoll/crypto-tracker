@@ -1,8 +1,8 @@
 <template>
   <q-page class="" id="pageOpeningPositions">
     <q-table
-      title="Opening Positions"
-      :data="openingPositions"
+      :title="'Opening Positions'"
+      :data="filtered"
       :columns="columns"
       row-key="txId"
       dense
@@ -39,9 +39,10 @@ export default {
   },
   computed: {
     filtered() {
-      if (this.accountFilter.length == 0) return this.openingPositions;
+      let txs = this.openingPositions;
+      if (this.accountFilter.length == 0) return txs;
       const filter = this.filter;
-      const filtered = this.history.filter(function(a) {
+      const filtered = txs.filter(function(a) {
         return (
           (a.name && a.name.includes(filter)) ||
           (a.address && a.address.includes(filter)) ||
@@ -57,12 +58,19 @@ export default {
     clear() {
       this.$actions.setData("openingPositions", []);
       this.openingPositions = [];
+    },
+    async load() {
+      const openingPositions =
+        (await this.$actions.getData("openingPositions")) ?? [];
+      Vue.set(this, "openingPositions", Object.freeze(openingPositions));
     }
   },
   async created() {
-    const openingPositions =
-      (await this.$actions.getData("openingPositions")) ?? [];
-    Vue.set(this, "openingPositions", Object.freeze(openingPositions));
+    await this.load();
+    store.onload = this.load;
+  },
+  destroyed() {
+    store.onload = null;
   },
 
   mounted() {

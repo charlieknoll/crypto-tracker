@@ -1,7 +1,7 @@
 <template>
   <q-page class="" id="pageRunningBalances">
     <q-table
-      title="Running Balances"
+      :title="'Running Balances - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
       row-key="txId"
@@ -56,7 +56,7 @@ import {
   columns
 } from "../services/running-balances-provider";
 import Vue from "Vue";
-import { commaStringToArray } from "../utils/arrayUtil";
+import { commaStringToLowerCaseArray } from "../utils/arrayUtil";
 export default {
   name: "PageTokenTransactions",
   data() {
@@ -84,9 +84,9 @@ export default {
         txs = txs.filter(tx => tx.asset == this.symbolFilter.toUpperCase());
       }
       if (this.accountFilter) {
-        const accounts = commaStringToArray(this.accountFilter);
+        const accounts = commaStringToLowerCaseArray(this.accountFilter);
         txs = txs.filter(tx => {
-          return accounts.findIndex(a => a == tx.account) > -1;
+          return accounts.findIndex(a => a == tx.account.toLowerCase()) > -1;
         });
       }
       if (this.onlyShowEndingAccount) {

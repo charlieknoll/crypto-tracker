@@ -1,7 +1,7 @@
 <template>
   <q-page class="" id="pageTokenTransactions">
     <q-table
-      title="Token Transactions"
+      :title="'Token Transactions - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
       row-key="txId"

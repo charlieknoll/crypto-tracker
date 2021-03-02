@@ -102,7 +102,7 @@ const menuList = [
 
   {
     icon: "mdi-swap-horizontal-circle",
-    label: "Account Transactions",
+    label: "Chain Transactions",
     separator: false,
     to: "/chain-transactions"
   },

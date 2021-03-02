@@ -74,6 +74,7 @@ export const getExchangeTrades = async function() {
       tx.amount = tx.volume;
       tx.price = currencyPrice * currencyUSDPrice;
       tx.gross = floatToMoney(tx.amount * tx.price);
+      tx.exchangeFee = tx.fee;
       if (tx.feeCurrency == tx.currency) {
         tx.fee = floatToMoney(tx.fee * currencyUSDPrice);
       } else {

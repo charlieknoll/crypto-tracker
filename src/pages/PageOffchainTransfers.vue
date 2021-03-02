@@ -1,7 +1,7 @@
 <template>
   <q-page class="" id="pageOffchainTransfers" ref="page">
     <q-table
-      title="Offchain Transfers"
+      :title="'Offchain Transfers - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
       row-key="txId"

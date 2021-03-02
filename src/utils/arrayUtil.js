@@ -36,4 +36,14 @@ const commaStringToArray = function(val) {
   }
   return array;
 };
-export { shuffle, convertToCsv, commaStringToArray };
+const commaStringToLowerCaseArray = function(val) {
+  const array = commaStringToArray(val);
+  return array.map(v => (v ?? "").toLowerCase());
+};
+
+export {
+  shuffle,
+  convertToCsv,
+  commaStringToLowerCaseArray,
+  commaStringToArray
+};
