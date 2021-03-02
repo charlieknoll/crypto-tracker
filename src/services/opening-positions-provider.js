@@ -37,6 +37,7 @@ export const processOpeningPositionsFile = function(openingData) {
     mappedOpeningData,
     (a, b) => a.txId == b.txId
   );
+  return mappedOpeningData.length;
 };
 
 export const columns = [

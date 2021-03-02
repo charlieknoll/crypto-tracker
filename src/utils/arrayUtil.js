@@ -29,5 +29,11 @@ const convertToCsv = function(arr, names) {
     .join("\r\n");
   return content;
 };
-
-export { shuffle, convertToCsv };
+const commaStringToArray = function(val) {
+  let array = val.replaceAll(" ", "").split(",");
+  if (array.length == 1 && array[0] == "") {
+    array.pop();
+  }
+  return array;
+};
+export { shuffle, convertToCsv, commaStringToArray };

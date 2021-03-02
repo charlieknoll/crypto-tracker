@@ -34,6 +34,11 @@ const routes = [
         component: () => import("pages/PageExchangeTransactions.vue")
       },
       {
+        name: "offchain-transfers",
+        path: "offchain-transfers",
+        component: () => import("pages/PageOffchainTransfers.vue")
+      },
+      {
         name: "running-balances",
         path: "running-balances",
         component: () => import("pages/PageRunningBalances.vue")

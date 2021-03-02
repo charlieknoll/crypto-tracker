@@ -1,13 +1,5 @@
 <template>
   <q-page class="" id="pageExchangeTransactions">
-    <q-btn @click="clear">Clear</q-btn>
-    <q-toggle v-model="groupByDay" label="Group By Day"></q-toggle>
-    <q-file
-      v-model="files"
-      label="Select/Drop csv files bitcoin.tax format"
-      filled
-      multiple
-    />
     <q-table
       title="Exchange Transactions"
       :data="filtered"
@@ -18,7 +10,23 @@
       :rows-per-page-options="[0]"
       class="my-sticky-header-table"
       :style="{ height: tableHeight }"
-    />
+    >
+      <template v-slot:top-right>
+        <q-input
+          style="width: 400px"
+          filled
+          debounce="500"
+          v-model="accountFilter"
+          label="Filter by
+        Account Name or Type"
+          stack-label
+          dense
+          clearable
+        />
+        <q-toggle v-model="groupByDay" label="Group By Day"></q-toggle>
+        <q-btn class="q-ml-lg" color="negative" label="Clear" @click="clear" />
+      </template>
+    </q-table>
   </q-page>
 </template>
 
@@ -33,10 +41,9 @@ export default {
   name: "PageExchangeTransactions",
   data() {
     return {
-      filter: "",
+      accountFilter: "",
       exchangeTrades: Object.freeze([]),
       columns,
-      files: [],
       groupByDay: false,
       pagination: {
         rowsPerPage: 0
@@ -44,16 +51,6 @@ export default {
       $store: store,
       $actions: actions
     };
-  },
-  watch: {
-    files: async function(val) {
-      if (val && val.length == 0) return;
-      if (val && val.length) this.$store.importing = true;
-      await processFiles(val);
-      this.$store.importing = false;
-      await this.load();
-      this.files = [];
-    }
   },
   computed: {
     filtered() {
@@ -99,15 +96,14 @@ export default {
     },
     tableHeight() {
       if (this.$q.screen.height == 0) return;
-      const height = this.$q.screen.height - 46 - 50;
+      const height = this.$q.screen.height;
       return (this.$q.screen.sm ? height : height - 50) + "px";
     }
   },
   methods: {
     clear() {
-      actions.setData("exchangeTrades", []);
+      this.$actions.setData("exchangeTrades", []);
       this.exchangeTrades = [];
-      this.files = [];
     },
     async load() {
       const exchangeTrades = await getExchangeTrades();
@@ -116,6 +112,10 @@ export default {
   },
   async created() {
     await this.load();
+    store.onload = this.load;
+  },
+  destroyed() {
+    store.onload = null;
   },
   mounted() {
     window.__vue_mounted = this.name;

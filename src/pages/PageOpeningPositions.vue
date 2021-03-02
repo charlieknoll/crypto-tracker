@@ -10,12 +10,6 @@
       :rows-per-page-options="[0]"
     >
       <template v-slot:top-right>
-        <q-btn
-          color="primary"
-          icon-right="archive"
-          label="Export to csv"
-          no-caps
-        />
         <q-btn class="q-ml-lg" color="negative" label="Clear" @click="clear" />
       </template>
     </q-table>

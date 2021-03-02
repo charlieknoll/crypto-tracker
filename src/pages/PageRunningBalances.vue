@@ -13,7 +13,18 @@
     >
       <template v-slot:top-right>
         <q-input
-          style="width: 400px"
+          style="width: 250px"
+          filled
+          debounce="500"
+          v-model="accountFilter"
+          label="Accounts"
+          stack-label
+          dense
+          clearable
+          class="q-mr-lg"
+        />
+        <q-input
+          style="width: 100px"
           filled
           debounce="500"
           v-model="symbolFilter"
@@ -45,12 +56,13 @@ import {
   columns
 } from "../services/running-balances-provider";
 import Vue from "Vue";
-
+import { commaStringToArray } from "../utils/arrayUtil";
 export default {
   name: "PageTokenTransactions",
   data() {
     return {
       symbolFilter: "",
+      accountFilter: "",
       onlyShowEnding: false,
       onlyShowEndingAccount: false,
       runningBalances: Object.freeze([]),
@@ -70,6 +82,12 @@ export default {
             );
       if (this.symbolFilter) {
         txs = txs.filter(tx => tx.asset == this.symbolFilter.toUpperCase());
+      }
+      if (this.accountFilter) {
+        const accounts = commaStringToArray(this.accountFilter);
+        txs = txs.filter(tx => {
+          return accounts.findIndex(a => a == tx.account) > -1;
+        });
       }
       if (this.onlyShowEndingAccount) {
         txs = txs.filter(tx => tx.endingAccount);

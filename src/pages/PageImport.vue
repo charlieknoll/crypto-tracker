@@ -14,8 +14,10 @@
       <q-btn label="Import Transactions" @click="importTransactions"></q-btn>
       <q-btn label="Clear Transactions" @click="clearTransactions"></q-btn>
       <q-btn label="Clear Price History" @click="clearPriceHistory"></q-btn>
-      <q-btn label="Clear CRV History" @click="clearCurveHistory"></q-btn>
-
+      <q-btn
+        label="Download Price History"
+        @click="downloadPriceHistory"
+      ></q-btn>
       <br />
       <p>Current block: {{ currentBlock }}</p>
 
@@ -40,21 +42,11 @@
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { processFile } from "../services/file-handler";
+import { processFiles } from "../services/file-handler";
 import {
   getCurrentBlock,
   getTransactions
 } from "../services/etherscan-provider";
-const reader = new FileReader();
-let currentFileName = null;
-reader.onload = async function(event) {
-  const result = await processFile(
-    currentFileName,
-    atob(event.target.result.split("base64,")[1])
-  );
-  currentFileName = null;
-  //console.log(atob(event.target.result.split("base64,")[1]));
-};
 export default {
   name: "PageImport",
   data() {
@@ -95,6 +87,9 @@ export default {
         }
       }
       this.$actions.setObservableData("addresses", cleansedAddresses);
+    },
+    downloadPriceHistory() {
+      //TODO
     }
   },
 
@@ -104,15 +99,12 @@ export default {
     }
   },
   watch: {
-    files: function(val) {
-      for (const f of val) {
-        const interval = setInterval(() => {
-          if (currentFileName != null) return;
-          clearInterval(interval);
-          currentFileName = f.name;
-          reader.readAsDataURL(f);
-        }, 400);
-      }
+    files: async function(val) {
+      if (val && val.length == 0) return;
+      if (val && val.length) this.$store.importing = true;
+      await processFiles(val);
+      this.$store.importing = false;
+      this.files = [];
     }
   },
 

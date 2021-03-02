@@ -6,6 +6,7 @@ import { actions } from "../boot/actions";
 export const getRunningBalances = async function() {
   let mappedData = [];
   const openingPositions = (await actions.getData("openingPositions")) ?? [];
+  const offchainTransfers = (await actions.getData("offchainTransfers")) ?? [];
   const chainTransactions = await getChainTransactions();
   const tokenTransactions = await getTokenTransactions();
   const exchangeTrades = await getExchangeTrades();
@@ -22,15 +23,35 @@ export const getRunningBalances = async function() {
       type: "Open"
     });
   }
+  for (const tx of offchainTransfers) {
+    mappedData.push({
+      txId: "Tr-I-" + tx.txId,
+      timestamp: tx.timestamp,
+      account: tx.toAccount,
+      date: tx.date,
+      amount: tx.amount,
+      asset: tx.asset,
+      type: "Transfer In"
+    });
+    mappedData.push({
+      txId: "Tr-O-" + tx.txId,
+      timestamp: tx.timestamp,
+      account: tx.fromAccount,
+      date: tx.date,
+      amount: -tx.amount,
+      asset: tx.asset,
+      type: "Transfer Out"
+    });
+  }
   for (const tx of chainTransactions) {
     if (tx.fromName == "GENESIS") continue;
     if (tx.toAccount.type.toLowerCase().includes("owned")) {
       mappedData.push({
-        txId: "chain-in-" + tx.txId,
+        txId: "Ch-I-" + tx.txId,
         timestamp: tx.timestamp,
         account: tx.toAccount.name,
         date: tx.date,
-        amount: tx.ethAmount,
+        amount: tx.isError ? 0.0 : tx.ethAmount,
         asset: "ETH",
         price: tx.price,
         type: "Chain-in",
@@ -39,11 +60,11 @@ export const getRunningBalances = async function() {
     }
     if (tx.fromAccount.type.toLowerCase().includes("owned")) {
       mappedData.push({
-        txId: "chain-out-" + tx.txId,
+        txId: "Ch-O-" + tx.txId,
         timestamp: tx.timestamp,
         account: tx.fromAccount.name,
         date: tx.date,
-        amount: -tx.ethAmount - tx.ethGasFee,
+        amount: tx.isError ? -tx.ethGasFee : -tx.ethAmount - tx.ethGasFee,
         asset: "ETH",
         price: tx.price,
         type: "Chain-out",
@@ -53,9 +74,10 @@ export const getRunningBalances = async function() {
   }
   const _tokenTransactions = tokenTransactions.filter(tt => tt.tracked);
   for (const tx of _tokenTransactions) {
+    if (tx.isError) continue;
     if (tx.toAccount.name.toLowerCase().includes("owned")) {
       mappedData.push({
-        txId: "token-in-" + tx.txId,
+        txId: "Tk-I-" + tx.txId,
         timestamp: tx.timestamp,
         account: tx.toAccount.name,
         date: tx.date,
@@ -68,7 +90,7 @@ export const getRunningBalances = async function() {
     }
     if (tx.fromAccount.name.toLowerCase().includes("owned")) {
       mappedData.push({
-        txId: "token-out-" + tx.txId,
+        txId: "Tk-O-" + tx.txId,
         timestamp: tx.timestamp,
         account: tx.fromAccount.name,
         date: tx.date,
@@ -82,7 +104,8 @@ export const getRunningBalances = async function() {
   }
   for (const tx of exchangeTrades) {
     mappedData.push({
-      txId: "exchange-" + tx.txId.substring(0, 13),
+      txId:
+        "Ex-" + (tx.action == "SELL" ? "O-" : "I-") + tx.txId.substring(0, 13),
       timestamp: tx.timestamp,
       account: tx.account,
       date: tx.date,

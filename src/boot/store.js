@@ -4,7 +4,7 @@ import { empty } from "../utils/stringUtil";
 
 import Address from "../models/address";
 
-export const store = Vue.observable({
+const _store = Vue.observable({
   apikey: LocalStorage.getItem("apikey") ?? process.env.ETHERSCAN_API_KEY,
   startYear: 2013,
   importing: false,
@@ -14,6 +14,7 @@ export const store = Vue.observable({
   autoImport: LocalStorage.getItem("autoImport") ?? false,
   addresses: (LocalStorage.getItem("addresses") ?? []).map(a => new Address(a)),
   openingPositions: LocalStorage.getItem("openingPositions") ?? [],
+  offchainTransfers: LocalStorage.getItem("offchainTransfers") ?? [],
   exchangeTrades: LocalStorage.getItem("exchangeTrades") ?? [],
   taxYear: LocalStorage.getItem("taxYear") ?? 2020,
   onLine: navigator.onLine,
@@ -22,6 +23,8 @@ export const store = Vue.observable({
     return !empty(this.apikey);
   }
 });
+
+export const store = _store;
 window.ononline = () => (store.onLine = true);
 window.onoffline = () => (store.onLine = false);
 

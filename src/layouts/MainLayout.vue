@@ -62,6 +62,14 @@
           </q-item>
           <q-separator :key="'sep' + index" v-if="menuItem.separator" />
         </template>
+        <q-item>
+          <q-file
+            v-model="files"
+            label="Select/Drop csv files bitcoin.tax format"
+            filled
+            multiple
+          />
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -109,6 +117,12 @@ const menuList = [
     label: "Exchange Trades",
     separator: false,
     to: "/exchange-transactions"
+  },
+  {
+    icon: "mdi-file-swap",
+    label: "Offchain Transfers",
+    separator: false,
+    to: "/offchain-transfers"
   },
   {
     icon: "mdi-note-text-outline",
@@ -168,7 +182,7 @@ const menuList = [
 ];
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-
+import { processFiles } from "../services/file-handler";
 const taxYears = [];
 const currentYear = new Date().getFullYear();
 
@@ -182,6 +196,7 @@ export default {
   data() {
     return {
       leftDrawerOpen: false,
+      files: null,
       menuList,
       taxYear: store.taxYear,
       taxYears: taxYears,
@@ -192,6 +207,14 @@ export default {
   watch: {
     taxYear: function(val) {
       actions.setObservableData("taxYear", val);
+    },
+    files: async function(val) {
+      if (val && val.length == 0) return;
+      if (val && val.length) this.$store.importing = true;
+      await processFiles(val);
+      this.$store.importing = false;
+      this.files = [];
+      if (store.onload) store.onload();
     }
   }
 };

@@ -1,5 +1,6 @@
 import { processOpeningPositionsFile } from "./opening-positions-provider";
 import { processExchangeTradesFile } from "./exchange-tx-provider";
+import { processOffchainTransfersFile } from "./offchain-transfers-provider";
 const parse = require("csv-parse/lib/sync");
 import Address from "../models/address";
 import { actions } from "../boot/actions";
@@ -40,6 +41,9 @@ export const processFile = function(name, content) {
   if (name.substring(0, 9) == "addresses") {
     return processAddressFile(content);
   }
+  if (name.substring(0, 9) == "transfers") {
+    return processOffchainTransfersFile(content);
+  }
   //return message
 };
 function showNotify(fileName) {
@@ -51,12 +55,13 @@ function showNotify(fileName) {
   });
   return notif;
 }
-function updateNotif(notif, recordCt, filename) {
+function updateNotif(notif, message, iconName) {
   notif({
-    message: `Processed ${recordCt} records from ${filename}.`,
+    message,
     timeout: 4000,
     spinner: false,
-    icon: "done"
+    icon: iconName,
+    color: iconName == "done" ? "green" : "red"
   });
 }
 export const processFiles = async function(fileArray, cb) {
@@ -64,11 +69,19 @@ export const processFiles = async function(fileArray, cb) {
   let currentFileName = null;
   reader.onload = function(event) {
     const notif = showNotify(currentFileName);
-    const result = processFile(
-      currentFileName,
-      atob(event.target.result.split("base64,")[1])
-    );
-    updateNotif(notif, result, currentFileName);
+    try {
+      const result = processFile(
+        currentFileName,
+        atob(event.target.result.split("base64,")[1])
+      );
+      updateNotif(
+        notif,
+        `Processed ${result} records from ${currentFileName}.`,
+        "done"
+      );
+    } catch (error) {
+      updateNotif(notif, `${currentFileName}: ${error.message}`, "error");
+    }
     currentFileName = null;
     //console.log(atob(event.target.result.split("base64,")[1]));
   };
