@@ -12,17 +12,17 @@
       :style="{ height: tableHeight }"
     >
       <template v-slot:top-right>
-        <q-input
-          style="width: 250px"
-          filled
-          debounce="500"
-          v-model="accountFilter"
-          label="Accounts"
-          stack-label
-          dense
-          clearable
-          class="q-mr-lg"
-        />
+        <div style="min-width: 250px;" class="q-mr-sm">
+          <q-select
+            filled
+            v-model="selectedAccounts"
+            multiple
+            :options="accounts"
+            use-chips
+            stack-label
+            label="Accounts"
+          />
+        </div>
         <q-input
           style="width: 100px"
           filled
@@ -63,6 +63,8 @@ export default {
     return {
       symbolFilter: "",
       accountFilter: "",
+      selectedAccounts: [],
+      accounts: [],
       onlyShowEnding: false,
       onlyShowEndingAccount: false,
       runningBalances: Object.freeze([]),
@@ -81,12 +83,13 @@ export default {
               tx => parseInt(tx.date.substring(0, 4)) == this.$store.taxYear
             );
       if (this.symbolFilter) {
-        txs = txs.filter(tx => tx.asset == this.symbolFilter.toUpperCase());
+        txs = txs.filter(
+          tx => tx.asset.toUpperCase() == this.symbolFilter.toUpperCase()
+        );
       }
-      if (this.accountFilter) {
-        const accounts = commaStringToLowerCaseArray(this.accountFilter);
+      if (this.selectedAccounts.length > 0) {
         txs = txs.filter(tx => {
-          return accounts.findIndex(a => a == tx.account.toLowerCase()) > -1;
+          return this.selectedAccounts.findIndex(a => a == tx.account) > -1;
         });
       }
       if (this.onlyShowEndingAccount) {
@@ -103,7 +106,7 @@ export default {
         const pixels = this.$q.screen.sm
           ? this.$q.screen.height
           : this.$q.screen.height - 50;
-        const rowPixels = pixels - 42 - 28 - 33; //table title, row header, row-footer
+        const rowPixels = pixels - 78 - 28 - 33; //table title, row header, row-footer
         const rows = Math.floor(rowPixels / 28);
         return { rowsPerPage: rows, page: this.page };
       },
@@ -130,8 +133,13 @@ export default {
     }
   },
   async created() {
-    const runningBalances = await getRunningBalances();
+    const {
+      runningBalances,
+      accountNames,
+      assets
+    } = await getRunningBalances();
     Vue.set(this, "runningBalances", Object.freeze(runningBalances));
+    Vue.set(this, "accounts", Object.freeze(accountNames));
   },
   mounted() {
     window.__vue_mounted = "PageTokenTransactions";

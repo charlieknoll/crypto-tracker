@@ -10,7 +10,6 @@ export const getRunningBalances = async function() {
   const chainTransactions = await getChainTransactions();
   const tokenTransactions = await getTokenTransactions();
   const exchangeTrades = await getExchangeTrades();
-
   for (const tx of openingPositions) {
     mappedData.push({
       txId: "opening-" + tx.txId,
@@ -78,9 +77,14 @@ export const getRunningBalances = async function() {
   const _tokenTransactions = tokenTransactions.filter(tt => tt.tracked);
   for (const tx of _tokenTransactions) {
     if (tx.isError) continue;
-    if (tx.toAccount.name.toLowerCase().includes("owned")) {
+    const internalTransfer =
+      tx.toAccount.type.toLowerCase().includes("owned") &&
+      tx.fromAccount.type.toLowerCase().includes("owned");
+
+    if (tx.toAccount.type.toLowerCase().includes("owned")) {
       mappedData.push({
         txId: "Tk-I-" + tx.txId,
+        internalTransfer,
         timestamp: tx.timestamp,
         account: tx.toAccount.name,
         date: tx.date,
@@ -91,10 +95,11 @@ export const getRunningBalances = async function() {
         hash: tx.hash
       });
     }
-    if (tx.fromAccount.name.toLowerCase().includes("owned")) {
+    if (tx.fromAccount.type.toLowerCase().includes("owned")) {
       mappedData.push({
         txId: "Tk-O-" + tx.txId,
-        timestamp: tx.timestamp,
+        internalTransfer,
+        timestamp: tx.timestamp - 1,
         account: tx.fromAccount.name,
         date: tx.date,
         amount: -tx.decimalAmount,
@@ -125,16 +130,15 @@ export const getRunningBalances = async function() {
   mappedData = mappedData.sort((a, b) => a.timestamp - b.timestamp);
   //Sort by timestamp
   //TODO set running balances
-  const assets = [];
   const accountAssets = [];
-
+  let assets = [];
   for (const tx of mappedData) {
     let asset = assets.find(a => a.symbol == tx.asset);
     if (!asset) {
       asset = { symbol: tx.asset, amount: 0.0 };
       assets.push(asset);
     }
-    asset.amount += tx.amount;
+    asset.amount += tx.internalTransfer ? 0.0 : tx.amount;
     tx.runningBalance = asset.amount;
     asset.endingTx = tx;
     let accountAsset = accountAssets.find(
@@ -154,7 +158,12 @@ export const getRunningBalances = async function() {
   for (const aa of assets) {
     aa.endingTx.ending = true;
   }
-  return mappedData;
+  //build unique list of assets,accounts
+  const accountNames = [...new Set(accountAssets.map(aa => aa.account))];
+  assets = [...new Set(assets.map(aa => aa.asset))];
+  assets.sort();
+  accountNames.sort();
+  return { runningBalances: mappedData, accountNames, assets };
 };
 
 export const columns = [
@@ -208,6 +217,12 @@ export const columns = [
     field: "runningAccountBalance",
     align: "right",
     format: (val, row) => `${(val ?? 0.0).toFixed(4)}`
+  },
+  {
+    name: "internalTransfer",
+    label: "Internal",
+    field: "internalTransfer",
+    align: "left"
   },
   {
     name: "runningBalance",
