@@ -23,26 +23,36 @@
             label="Accounts"
           />
         </div>
-        <q-input
-          style="width: 100px"
-          filled
-          debounce="500"
-          v-model="symbolFilter"
-          label="Symbol (e.g. BTC, ETH, CRV...)"
-          stack-label
-          dense
-          clearable
-        />
-        <q-toggle
+        <div style="min-width: 250px;" class="q-mr-sm">
+          <q-select
+            filled
+            v-model="selectedAssets"
+            multiple
+            :options="assets"
+            use-chips
+            stack-label
+            label="Assets"
+          />
+        </div>
+        <q-btn-dropdown stretch flat :label="balanceGrouping">
+          <q-list>
+            <q-item
+              v-for="n in groups"
+              :key="`x.${n}`"
+              clickable
+              v-close-popup
+              tabindex="0"
+              @click="balanceGrouping = n"
+            >
+              <q-item-label>{{ n }}</q-item-label>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+        <!-- <q-toggle
           class="q-mr-lg"
           v-model="onlyShowEnding"
           label="Ending"
-        ></q-toggle>
-        <q-toggle
-          class="q-mr-lg"
-          v-model="onlyShowEndingAccount"
-          label="Ending Account"
-        ></q-toggle>
+        ></q-toggle> -->
       </template>
     </q-table>
   </q-page>
@@ -61,12 +71,12 @@ export default {
   name: "PageTokenTransactions",
   data() {
     return {
-      symbolFilter: "",
-      accountFilter: "",
+      groups: ["Detailed", "Account", "Asset"],
+      balanceGrouping: "Detailed",
+      assets: [],
+      selectedAssets: [],
       selectedAccounts: [],
       accounts: [],
-      onlyShowEnding: false,
-      onlyShowEndingAccount: false,
       runningBalances: Object.freeze([]),
       columns: columns,
       page: 1,
@@ -76,28 +86,45 @@ export default {
   },
   computed: {
     filtered() {
-      let txs =
-        this.$store.taxYear == "All"
-          ? this.runningBalances
-          : this.runningBalances.filter(
-              tx => parseInt(tx.date.substring(0, 4)) == this.$store.taxYear
-            );
-      if (this.symbolFilter) {
-        txs = txs.filter(
-          tx => tx.asset.toUpperCase() == this.symbolFilter.toUpperCase()
-        );
+      let txs = this.runningBalances;
+
+      if (this.selectedAssets.length > 0) {
+        txs = txs.filter(tx => {
+          return this.selectedAssets.findIndex(ss => ss == tx.asset) > -1;
+        });
       }
       if (this.selectedAccounts.length > 0) {
         txs = txs.filter(tx => {
           return this.selectedAccounts.findIndex(a => a == tx.account) > -1;
         });
       }
-      if (this.onlyShowEndingAccount) {
-        txs = txs.filter(tx => tx.endingAccount);
+      if (this.balanceGrouping == "Account") {
+        let taxYear = this.$store.taxYear;
+        if (taxYear == "All") {
+          taxYear = this.$store.taxYears[this.$store.taxYears.length - 2];
+        }
+        txs = txs.filter(tx => {
+          return tx.accountEndingYears.findIndex(ey => ey == taxYear) > -1;
+        });
       }
-      if (this.onlyShowEnding) {
-        txs = txs.filter(tx => tx.ending);
+      if (this.balanceGrouping == "Asset") {
+        let taxYear = this.$store.taxYear;
+        if (taxYear == "All") {
+          taxYear = this.$store.taxYears[this.$store.taxYears.length - 2];
+        }
+        txs = txs.filter(tx => {
+          return tx.assetEndingYears.findIndex(ey => ey == taxYear) > -1;
+        });
       }
+      if (this.balanceGrouping == "Detailed") {
+        txs =
+          this.$store.taxYear == "All"
+            ? txs
+            : txs.filter(
+                tx => parseInt(tx.date.substring(0, 4)) == this.$store.taxYear
+              );
+      }
+
       return Object.freeze(txs);
     },
     pagination: {
@@ -140,6 +167,7 @@ export default {
     } = await getRunningBalances();
     Vue.set(this, "runningBalances", Object.freeze(runningBalances));
     Vue.set(this, "accounts", Object.freeze(accountNames));
+    Vue.set(this, "assets", Object.freeze(assets));
   },
   mounted() {
     window.__vue_mounted = "PageTokenTransactions";

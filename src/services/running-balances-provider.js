@@ -2,6 +2,7 @@ import { getChainTransactions } from "./chain-tx-provider";
 import { getTokenTransactions } from "./token-tx-provider";
 import { getExchangeTrades } from "./exchange-tx-provider";
 import { actions } from "../boot/actions";
+import { store } from "../boot/store";
 
 export const getRunningBalances = async function() {
   let mappedData = [];
@@ -135,32 +136,72 @@ export const getRunningBalances = async function() {
   for (const tx of mappedData) {
     let asset = assets.find(a => a.symbol == tx.asset);
     if (!asset) {
-      asset = { symbol: tx.asset, amount: 0.0 };
+      asset = {
+        endingTxs: {},
+        symbol: tx.asset,
+        amount: 0.0
+      };
       assets.push(asset);
     }
     asset.amount += tx.internalTransfer ? 0.0 : tx.amount;
     tx.runningBalance = asset.amount;
-    asset.endingTx = tx;
+    asset.endingTxs[tx.date.substring(0, 4)] = tx;
+
     let accountAsset = accountAssets.find(
       a => a.symbol == tx.asset && a.account == tx.account
     );
     if (!accountAsset) {
-      accountAsset = { symbol: tx.asset, amount: 0.0, account: tx.account };
+      accountAsset = {
+        endingTxs: {},
+        symbol: tx.asset,
+        amount: 0.0,
+        account: tx.account
+      };
       accountAssets.push(accountAsset);
     }
+    accountAsset.endingTxs[tx.date.substring(0, 4)] = tx;
     accountAsset.amount += tx.amount;
-    accountAsset.endingTx = tx;
+    tx.accountEndingYears = [];
+    tx.assetEndingYears = [];
     tx.runningAccountBalance = accountAsset.amount;
+    tx.year = parseInt(tx.date.substring(0, 4));
   }
   for (const aa of accountAssets) {
-    aa.endingTx.endingAccount = true;
+    let endingTx = null;
+    for (const taxYear of store.taxYears) {
+      const _taxYear = taxYear.toString();
+      if (_taxYear == "All") continue;
+      if (aa.endingTxs[_taxYear]) {
+        aa.endingTxs[_taxYear].accountEndingYears.push(taxYear);
+        endingTx = aa.endingTxs[_taxYear];
+        continue;
+      }
+      if (endingTx == null) continue;
+      const prevYear = (taxYear - 1).toString();
+      aa.endingTxs[_taxYear] = aa.endingTxs[prevYear];
+      aa.endingTxs[_taxYear].accountEndingYears.push(taxYear);
+    }
   }
   for (const aa of assets) {
-    aa.endingTx.ending = true;
+    let endingTx = null;
+    for (const taxYear of store.taxYears) {
+      const _taxYear = taxYear.toString();
+      if (_taxYear == "All") continue;
+      if (aa.endingTxs[_taxYear]) {
+        aa.endingTxs[_taxYear].assetEndingYears.push(taxYear);
+        endingTx = aa.endingTxs[_taxYear];
+        continue;
+      }
+      if (endingTx == null) continue;
+      const prevYear = (taxYear - 1).toString();
+      aa.endingTxs[_taxYear] = aa.endingTxs[prevYear];
+      aa.endingTxs[_taxYear].assetEndingYears.push(taxYear);
+    }
   }
+
   //build unique list of assets,accounts
   const accountNames = [...new Set(accountAssets.map(aa => aa.account))];
-  assets = [...new Set(assets.map(aa => aa.asset))];
+  assets = [...new Set(assets.map(aa => aa.symbol))];
   assets.sort();
   accountNames.sort();
   return { runningBalances: mappedData, accountNames, assets };
@@ -217,12 +258,6 @@ export const columns = [
     field: "runningAccountBalance",
     align: "right",
     format: (val, row) => `${(val ?? 0.0).toFixed(4)}`
-  },
-  {
-    name: "internalTransfer",
-    label: "Internal",
-    field: "internalTransfer",
-    align: "left"
   },
   {
     name: "runningBalance",

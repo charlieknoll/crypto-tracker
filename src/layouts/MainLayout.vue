@@ -183,13 +183,6 @@ const menuList = [
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { processFiles } from "../services/file-handler";
-const taxYears = [];
-const currentYear = new Date().getFullYear();
-
-for (let i = store.startYear; i <= currentYear; i++) {
-  taxYears.push(i);
-}
-taxYears.push("All");
 
 export default {
   name: "MainLayout",
@@ -199,7 +192,7 @@ export default {
       files: null,
       menuList,
       taxYear: store.taxYear,
-      taxYears: taxYears,
+      taxYears: store.taxYears,
       $store: store
     };
   },
