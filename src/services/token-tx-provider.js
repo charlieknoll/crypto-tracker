@@ -62,7 +62,7 @@ function setImpliedGrossAndPrices(parentGross, txSet) {
   for (const tx of txSet) {
     ///if (!tx.tracked) continue;
     tokenPrices.unshift({
-      symbol: tx.tokenSymbol,
+      symbol: tx.asset,
       price: tx.price
     });
   }
@@ -86,11 +86,11 @@ async function setImpliedTxGross(pt) {
   );
   let pricesMapped = true;
   for (const tx of outTxs) {
-    tx.tokenPrice = tokenPrices.find(tp => tp.symbol == tx.tokenSymbol);
+    tx.tokenPrice = tokenPrices.find(tp => tp.symbol == tx.asset);
     if (!tx.tokenPrice) {
       tx.tokenPrice = {
-        price: await getPrice(tx.tokenSymbol, tx.date.substring(2, 10)),
-        symbol: tx.tokenSymbol
+        price: await getPrice(tx.asset, tx.date.substring(2, 10)),
+        symbol: tx.asset
       };
     }
     pricesMapped = pricesMapped && tx.tokenPrice;
@@ -133,9 +133,7 @@ function TokenTransaction() {
 
     this.action = this.parentTx.methodName;
 
-    this.tracked =
-      trackedTokens.findIndex(tokenSymbol => tokenSymbol == this.tokenSymbol) >
-      -1;
+    this.tracked = trackedTokens.findIndex(asset => asset == this.asset) > -1;
 
     if (!this.toAccount.type || !this.fromAccount.type) {
       this.action = "UNKNOWN ADDR";
@@ -143,11 +141,11 @@ function TokenTransaction() {
     }
     this.gross = 0.0;
     this.marketGross = 0.0;
-    if (baseCurrencies.find(c => c == this.tokenSymbol.toUpperCase())) {
+    if (baseCurrencies.find(c => c == this.asset.toUpperCase())) {
       this.gross = bnToFloat(this.amount, this.tokenDecimal);
       this.price = 1.0;
     } else if (this.tracked) {
-      this.price = await getPrice(this.tokenSymbol, this.date);
+      this.price = await getPrice(this.asset, this.date);
       this.gross = this.price * bnToFloat(this.amount, this.tokenDecimal);
     }
 
@@ -190,7 +188,7 @@ function TokenTransaction() {
   this.init = async function(tx) {
     this.toAccount = actions.addImportedAddress({ address: tx.to });
     this.fromAccount = actions.addImportedAddress({ address: tx.from });
-    this.tokenSymbol = tx.tokenSymbol;
+    this.asset = tx.tokenSymbol;
     this.tokenDecimal = tx.tokenDecimal;
     this.hash = tx.hash.toLowerCase();
     this.toName = this.toAccount.name;
@@ -247,12 +245,12 @@ export const getTokenTransactions = async function() {
       store.trackSpentTokens &&
       tokenTx.fromAccount.type &&
       tokenTx.fromAccount.type.toLowerCase().includes("owned") &&
-      tokenTx.tokenSymbol != "ETH" &&
-      tokenTx.tokenSymbol != "" &&
-      !tokenTx.tokenSymbol.includes("tinyurl")
+      tokenTx.asset != "ETH" &&
+      tokenTx.asset &&
+      !tokenTx.asset.includes("tinyurl")
     ) {
-      if (trackedTokens.findIndex(tt => tt == t.tokenSymbol) == -1) {
-        trackedTokens.push(t.tokenSymbol);
+      if (trackedTokens.findIndex(tt => tt == tokenTx.asset) == -1) {
+        trackedTokens.push(tokenTx.asset);
       }
     }
     mappedTxs.push(tokenTx);
@@ -299,9 +297,9 @@ export const columns = [
     align: "left"
   },
   {
-    name: "tokenSymbol",
+    name: "asset",
     label: "Token",
-    field: "tokenSymbol",
+    field: "asset",
     align: "left"
   },
   {

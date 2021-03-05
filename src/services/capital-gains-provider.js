@@ -22,7 +22,7 @@ export const gainsHistory = function() {
     tx => tx.action.includes("SELL") && tx.displayAmount != 0.0
   );
   _tokenHistory = _tokenHistory.map(tx => {
-    tx.asset = tx.tokenSymbol;
+    tx.asset = tx.asset;
     tx.account = tx.fromAccount.name;
     tx.amount = tx.displayAmount;
     tx.proceeds = tx.gross - tx.fee;
@@ -44,7 +44,7 @@ export const gainsHistory = function() {
     tx => tx.action.includes("BUY") && tx.displayAmount != 0.0
   );
   _buyTokenHistory = _buyTokenHistory.map(tx => {
-    tx.asset = tx.tokenSymbol;
+    tx.asset = tx.asset;
     tx.account = tx.toAccount.name;
     tx.amount = tx.displayAmount;
     tx.cost = tx.gross + tx.fee;

@@ -91,7 +91,7 @@ export const getRunningBalances = async function() {
         account: tx.toAccount.name,
         date: tx.date,
         amount: tx.decimalAmount,
-        asset: tx.tokenSymbol,
+        asset: tx.asset,
         price: tx.price,
         type: "Token-in",
         hash: tx.hash
@@ -105,7 +105,7 @@ export const getRunningBalances = async function() {
         account: tx.fromAccount.name,
         date: tx.date,
         amount: -tx.decimalAmount,
-        asset: tx.tokenSymbol,
+        asset: tx.asset,
         price: tx.price,
         type: "Token-out",
         hash: tx.hash

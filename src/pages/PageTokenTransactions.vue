@@ -1,35 +1,19 @@
 <template>
   <q-page class="" id="pageTokenTransactions">
-    <q-table
+    <table-transactions
       :title="'Token Transactions - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
-      row-key="txId"
-      dense
-      @row-click="click"
-      :pagination.sync="pagination"
-      :rows-per-page-options="[0]"
-      :style="{ height: tableHeight }"
     >
       <template v-slot:top-right>
-        <q-input
-          style="width: 400px"
-          filled
-          debounce="500"
-          v-model="accountFilter"
-          label="Filter by
-        Account Name or Type"
-          stack-label
-          dense
-          clearable
-        />
+        <filter-account-asset></filter-account-asset>
         <q-toggle
           class="q-mr-lg"
           v-model="onlyShowTracked"
           label="Only Tracked"
         ></q-toggle>
       </template>
-    </q-table>
+    </table-transactions>
   </q-page>
 </template>
 
@@ -38,12 +22,19 @@ import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { getTokenTransactions, columns } from "../services/token-tx-provider";
 import Vue from "Vue";
+import TableTransactions from "src/components/TableTransactions.vue";
+import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
+import {
+  filterByAccounts,
+  filterByAssets,
+  filterByYear
+} from "../services/filter-service";
 
 export default {
+  components: { TableTransactions, FilterAccountAsset },
   name: "PageTokenTransactions",
   data() {
     return {
-      accountFilter: "",
       onlyShowTracked: true,
       tokenTransactions: Object.freeze([]),
       columns: columns,
@@ -54,60 +45,27 @@ export default {
   },
   computed: {
     filtered() {
-      let txs =
-        this.$store.taxYear == "All"
-          ? this.tokenTransactions
-          : this.tokenTransactions.filter(
-              ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
-            );
-
+      let txs = filterByYear(this.tokenTransactions, this.$store.taxYear);
+      txs = filterByAccounts(txs, this.$store.selectedAccounts, true);
+      txs = filterByAssets(txs, this.$store.selectedAssets);
       if (this.onlyShowTracked) {
         txs = txs.filter(tx => tx.tracked);
       }
-      if (this.accountFilter) {
-        txs = txs.filter(
-          tx =>
-            tx.toName
-              .toLowerCase()
-              .includes(this.accountFilter.toLowerCase()) ||
-            tx.fromName.toLowerCase().includes(this.accountFilter.toLowerCase())
-        );
-      }
       return Object.freeze(txs);
-    },
-    pagination: {
-      get() {
-        if (this.$q.screen.height == 0) return { rowsPerPage: 0 };
-        const pixels = this.$q.screen.sm
-          ? this.$q.screen.height
-          : this.$q.screen.height - 50;
-        const rowPixels = pixels - 42 - 28 - 33; //table title, row header, row-footer
-        const rows = Math.floor(rowPixels / 28);
-        return { rowsPerPage: rows, page: this.page };
-      },
-      set(val) {
-        this.page = val.page;
-      }
-    },
-    tableHeight() {
-      if (this.$q.screen.height == 0) return;
-      return (
-        (this.$q.screen.sm
-          ? this.$q.screen.height
-          : this.$q.screen.height - 50) + "px"
-      );
     }
   },
   methods: {
-    click(evt, row, index) {
-      if (evt.ctrlKey) {
-        window.open("https://etherscan.io/tx/" + row.hash);
-      }
+    async load() {
+      const tokenTxs = await getTokenTransactions();
+      Vue.set(this, "tokenTransactions", Object.freeze(tokenTxs));
     }
   },
   async created() {
-    const tokenTxs = await getTokenTransactions();
-    Vue.set(this, "tokenTransactions", Object.freeze(tokenTxs));
+    await this.load();
+    store.onload = this.load();
+  },
+  destroyed() {
+    store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageTokenTransactions";

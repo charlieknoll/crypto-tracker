@@ -1,8 +1,17 @@
-export const filterByAccounts = function(txs, selectedAccounts) {
+export const filterByAccounts = function(txs, selectedAccounts, useToFrom) {
   if (selectedAccounts.length > 0) {
-    txs = txs.filter(tx => {
-      return selectedAccounts.findIndex(a => a == tx.account) > -1;
-    });
+    if (useToFrom) {
+      txs = txs.filter(tx => {
+        return (
+          selectedAccounts.findIndex(a => a == tx.toName) > -1 ||
+          selectedAccounts.findIndex(a => a == tx.fromName) > -1
+        );
+      });
+    } else {
+      txs = txs.filter(tx => {
+        return selectedAccounts.findIndex(a => a == tx.account) > -1;
+      });
+    }
   }
   return txs;
 };

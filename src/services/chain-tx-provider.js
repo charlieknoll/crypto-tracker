@@ -143,8 +143,10 @@ export const columns = [
   },
   {
     name: "error",
-    label: "",
+    label: "Error",
     field: "isError",
-    align: "left"
+    align: "left",
+    format: (val, row) => `${val ? "ERROR" : ""}`,
+    style: "color: red; font-weight: bold;"
   }
 ];
