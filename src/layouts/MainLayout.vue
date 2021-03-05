@@ -143,12 +143,6 @@ const menuList = [
     to: "/spending"
   },
   {
-    icon: "mdi-door-closed",
-    label: "Closing Positions",
-    separator: false,
-    to: "/closing-positions"
-  },
-  {
     icon: "mdi-calculator",
     label: "Capital Gains",
     separator: true,

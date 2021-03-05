@@ -59,11 +59,12 @@ export default {
           : this.exchangeTrades.filter(
               ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
             );
-      if (this.accountFilter.length == 0) return txs;
-      const filter = this.accountFilter.toLowerCase();
-      txs = txs.filter(function(t) {
-        return (t.account ?? "").toLowerCase() == filter;
-      });
+      if (this.accountFilter.length != 0) {
+        const filter = this.accountFilter.toLowerCase();
+        txs = txs.filter(function(t) {
+          return (t.account ?? "").toLowerCase() == filter;
+        });
+      }
       if (!this.groupByDay) return txs;
       const grouped = [];
       for (const et of txs) {
