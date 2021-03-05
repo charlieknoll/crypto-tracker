@@ -1,22 +1,22 @@
 <template>
   <div>
-    <div style="min-width: 250px;" class="q-mr-sm">
+    <div style="min-width: 250px; display: inline-block;" class="q-mr-sm">
       <q-select
         filled
-        v-model="selectedAccounts"
+        v-model="$store.selectedAccounts"
         multiple
-        :options="accounts"
+        :options="$store.accounts"
         use-chips
         stack-label
         label="Accounts"
       />
     </div>
-    <div style="min-width: 250px;" class="q-mr-sm">
+    <div style="min-width: 250px; display: inline-block;" class="q-mr-sm">
       <q-select
         filled
-        v-model="selectedAssets"
+        v-model="$store.selectedAssets"
         multiple
-        :options="assets"
+        :options="$store.assets"
         use-chips
         stack-label
         label="Assets"
@@ -26,7 +26,15 @@
 </template>
 
 <script>
-export default {};
+import { store } from "../boot/store";
+export default {
+  name: "FilterAccountAsset",
+  data() {
+    return {
+      $store: store
+    };
+  }
+};
 </script>
 
 <style></style>

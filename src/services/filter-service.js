@@ -1,0 +1,23 @@
+export const filterByAccounts = function(txs, selectedAccounts) {
+  if (selectedAccounts.length > 0) {
+    txs = txs.filter(tx => {
+      return selectedAccounts.findIndex(a => a == tx.account) > -1;
+    });
+  }
+  return txs;
+};
+export const filterByAssets = function(txs, selectedAssets) {
+  if (selectedAssets.length > 0) {
+    txs = txs.filter(tx => {
+      return selectedAssets.findIndex(ss => ss == tx.asset) > -1;
+    });
+  }
+  return txs;
+};
+export const filterByYear = function(txs, year) {
+  txs =
+    year == "All"
+      ? txs
+      : txs.filter(tx => parseInt(tx.date.substring(0, 4)) == year);
+  return txs;
+};

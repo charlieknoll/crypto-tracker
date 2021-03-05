@@ -12,28 +12,7 @@
       :style="{ height: tableHeight }"
     >
       <template v-slot:top-right>
-        <div style="min-width: 250px;" class="q-mr-sm">
-          <q-select
-            filled
-            v-model="selectedAccounts"
-            multiple
-            :options="accounts"
-            use-chips
-            stack-label
-            label="Accounts"
-          />
-        </div>
-        <div style="min-width: 250px;" class="q-mr-sm">
-          <q-select
-            filled
-            v-model="selectedAssets"
-            multiple
-            :options="assets"
-            use-chips
-            stack-label
-            label="Assets"
-          />
-        </div>
+        <filter-account-asset></filter-account-asset>
         <q-btn-dropdown stretch flat :label="balanceGrouping">
           <q-list>
             <q-item
@@ -48,11 +27,6 @@
             </q-item>
           </q-list>
         </q-btn-dropdown>
-        <!-- <q-toggle
-          class="q-mr-lg"
-          v-model="onlyShowEnding"
-          label="Ending"
-        ></q-toggle> -->
       </template>
     </q-table>
   </q-page>
@@ -65,18 +39,21 @@ import {
   getRunningBalances,
   columns
 } from "../services/running-balances-provider";
+import {
+  filterByAccounts,
+  filterByAssets,
+  filterByYear
+} from "../services/filter-service";
 import Vue from "Vue";
 import { commaStringToLowerCaseArray } from "../utils/arrayUtil";
+import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
+
 export default {
   name: "PageTokenTransactions",
   data() {
     return {
       groups: ["Detailed", "Account", "Asset"],
       balanceGrouping: "Detailed",
-      assets: [],
-      selectedAssets: [],
-      selectedAccounts: [],
-      accounts: [],
       runningBalances: Object.freeze([]),
       columns: columns,
       page: 1,
@@ -84,20 +61,15 @@ export default {
       $actions: actions
     };
   },
+  components: {
+    FilterAccountAsset
+  },
   computed: {
     filtered() {
       let txs = this.runningBalances;
+      txs = filterByAssets(txs, this.$store.selectedAssets);
+      txs = filterByAccounts(txs, this.$store.selectedAccounts);
 
-      if (this.selectedAssets.length > 0) {
-        txs = txs.filter(tx => {
-          return this.selectedAssets.findIndex(ss => ss == tx.asset) > -1;
-        });
-      }
-      if (this.selectedAccounts.length > 0) {
-        txs = txs.filter(tx => {
-          return this.selectedAccounts.findIndex(a => a == tx.account) > -1;
-        });
-      }
       if (this.balanceGrouping == "Account") {
         let taxYear = this.$store.taxYear;
         if (taxYear == "All") {
@@ -117,12 +89,7 @@ export default {
         });
       }
       if (this.balanceGrouping == "Detailed") {
-        txs =
-          this.$store.taxYear == "All"
-            ? txs
-            : txs.filter(
-                tx => parseInt(tx.date.substring(0, 4)) == this.$store.taxYear
-              );
+        txs = filterByYear(txs, this.$store.taxYear);
       }
 
       return Object.freeze(txs);
@@ -166,8 +133,10 @@ export default {
       assets
     } = await getRunningBalances();
     Vue.set(this, "runningBalances", Object.freeze(runningBalances));
-    Vue.set(this, "accounts", Object.freeze(accountNames));
-    Vue.set(this, "assets", Object.freeze(assets));
+    // Vue.set(this, "accounts", Object.freeze(accountNames));
+    // Vue.set(this, "assets", Object.freeze(assets));
+    this.$store.assets = assets;
+    this.$store.accounts = accountNames;
   },
   mounted() {
     window.__vue_mounted = "PageTokenTransactions";

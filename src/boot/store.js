@@ -13,6 +13,10 @@ taxYears.push("All");
 
 const _store = Vue.observable({
   apikey: LocalStorage.getItem("apikey") ?? process.env.ETHERSCAN_API_KEY,
+  assets: [],
+  selectedAssets: [],
+  selectedAccounts: [],
+  accounts: [],
   startYear,
   taxYears,
   importing: false,
