@@ -4,7 +4,7 @@
       :title="'Running Balances - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
-      @rowClick="click"
+      @row-click="click"
     >
       <template v-slot:top-right>
         <filter-account-asset></filter-account-asset>
@@ -44,7 +44,7 @@ import { commaStringToLowerCaseArray } from "../utils/arrayUtil";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
 import TableTransactions from "src/components/TableTransactions.vue";
 export default {
-  name: "PageTokenTransactions",
+  name: "PageRunningBalances",
   data() {
     return {
       groups: ["Detailed", "Account", "Asset"],
@@ -89,28 +89,6 @@ export default {
       }
 
       return Object.freeze(txs);
-    },
-    pagination: {
-      get() {
-        if (this.$q.screen.height == 0) return { rowsPerPage: 0 };
-        const pixels = this.$q.screen.sm
-          ? this.$q.screen.height
-          : this.$q.screen.height - 50;
-        const rowPixels = pixels - 78 - 28 - 33; //table title, row header, row-footer
-        const rows = Math.floor(rowPixels / 28);
-        return { rowsPerPage: rows, page: this.page };
-      },
-      set(val) {
-        this.page = val.page;
-      }
-    },
-    tableHeight() {
-      if (this.$q.screen.height == 0) return;
-      return (
-        (this.$q.screen.sm
-          ? this.$q.screen.height
-          : this.$q.screen.height - 50) + "px"
-      );
     }
   },
   methods: {

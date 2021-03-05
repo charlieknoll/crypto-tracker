@@ -5,25 +5,26 @@
     :title="title"
     :data="data"
     :columns="columns"
-    @row-click="rowClick"
+    v-on="$listeners"
     :pagination.sync="pagination"
     :rows-per-page-options="[0]"
     :style="{ height: tableHeight }"
     ref="transactionTable"
   >
+    <template v-slot:top-right>
+      <slot name="top-right"></slot>
+    </template>
   </q-table>
 </template>
 
 <script>
-import { QTable } from "quasar";
 export default {
   name: "TableTransactions",
-  extends: QTable,
+  // eslint-disable-next-line
   props: {
     title: String,
     data: Array,
-    columns: Array,
-    rowClick: Function
+    columns: Array
   },
   data() {
     return {
