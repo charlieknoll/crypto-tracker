@@ -4,6 +4,8 @@ import { processOffchainTransfersFile } from "./offchain-transfers-provider";
 const parse = require("csv-parse/lib/sync");
 import Address from "../models/address";
 import { actions } from "../boot/actions";
+import { store } from "../boot/store";
+
 import { Notify } from "quasar";
 
 const waitFor = async function(fn, args, ms, interval) {
@@ -31,6 +33,7 @@ function processAddressFile(content) {
   actions.setObservableData("addresses", addresses);
 }
 export const processFile = function(name, content) {
+  store.updated = true;
   //TODO route file to proper processor
   if (name.substring(0, 5) == "openi") {
     return processOpeningPositionsFile(content);

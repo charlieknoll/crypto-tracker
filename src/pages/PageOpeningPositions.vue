@@ -1,18 +1,15 @@
 <template>
   <q-page class="" id="pageOpeningPositions">
-    <q-table
+    <table-transactions
       :title="'Opening Positions'"
       :data="filtered"
       :columns="columns"
-      row-key="txId"
-      dense
-      :pagination.sync="pagination"
-      :rows-per-page-options="[0]"
     >
       <template v-slot:top-right>
+        <filter-account-asset></filter-account-asset>
         <q-btn class="q-ml-lg" color="negative" label="Clear" @click="clear" />
       </template>
-    </q-table>
+    </table-transactions>
   </q-page>
 </template>
 
@@ -22,17 +19,18 @@ import { actions } from "../boot/actions";
 
 import { columns } from "../services/opening-positions-provider";
 import Vue from "Vue";
+import TableTransactions from "src/components/TableTransactions.vue";
+import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
 
+import { filterByAccounts, filterByAssets } from "../services/filter-service";
 export default {
+  components: { TableTransactions, FilterAccountAsset },
   name: "PageOpeningPositions",
   data() {
     return {
-      accountFilter: "",
       openingPositions: Object.freeze([]),
       columns,
-      pagination: {
-        rowsPerPage: 0
-      },
+      page: 1,
       $store: store,
       $actions: actions
     };
@@ -40,18 +38,9 @@ export default {
   computed: {
     filtered() {
       let txs = this.openingPositions;
-      if (this.accountFilter.length == 0) return txs;
-      const filter = this.filter;
-      const filtered = txs.filter(function(a) {
-        return (
-          (a.name && a.name.includes(filter)) ||
-          (a.address && a.address.includes(filter)) ||
-          !a.name ||
-          !a.address
-        );
-      });
-
-      return filtered;
+      txs = filterByAssets(txs, this.$store.selectedAssets);
+      txs = filterByAccounts(txs, this.$store.selectedAccounts);
+      return Object.freeze(txs);
     }
   },
   methods: {

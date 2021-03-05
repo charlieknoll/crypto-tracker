@@ -177,6 +177,7 @@ const menuList = [
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { processFiles } from "../services/file-handler";
+import { getRunningBalances } from "src/services/running-balances-provider";
 
 export default {
   name: "MainLayout",
@@ -202,6 +203,11 @@ export default {
       this.$store.importing = false;
       this.files = [];
       if (store.onload) store.onload();
+    }
+  },
+  async mounted() {
+    if (store.updated) {
+      await getRunningBalances();
     }
   }
 };

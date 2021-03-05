@@ -39,7 +39,6 @@ import {
   filterByYear
 } from "../services/filter-service";
 import Vue from "Vue";
-import { commaStringToLowerCaseArray } from "../utils/arrayUtil";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
 import TableTransactions from "src/components/TableTransactions.vue";
 export default {
@@ -90,14 +89,18 @@ export default {
       return Object.freeze(txs);
     }
   },
-
+  methods: {
+    async load() {
+      const runningBalances = await getRunningBalances();
+      Vue.set(this, "runningBalances", Object.freeze(runningBalances));
+    }
+  },
   async created() {
-    const runningBalances = await getRunningBalances();
-    Vue.set(this, "runningBalances", Object.freeze(runningBalances));
-    // Vue.set(this, "accounts", Object.freeze(accountNames));
-    // Vue.set(this, "assets", Object.freeze(assets));
-    // this.$store.assets = assets;
-    // this.$store.accounts = accountNames;
+    await this.load();
+    store.onload = this.load();
+  },
+  destroyed() {
+    store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageTokenTransactions";
