@@ -1,31 +1,16 @@
 <template>
   <q-page class="" id="pageExchangeTransactions">
-    <q-table
+    <table-transactions
       :title="'Exchange Transactions - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
-      row-key="txId"
-      dense
-      :pagination.sync="pagination"
-      :rows-per-page-options="[0]"
-      class="my-sticky-header-table"
-      :style="{ height: tableHeight }"
     >
       <template v-slot:top-right>
-        <q-input
-          style="width: 400px"
-          filled
-          debounce="500"
-          v-model="accountFilter"
-          label="Account Name"
-          stack-label
-          dense
-          clearable
-        />
+        <filter-account-asset></filter-account-asset>
         <q-toggle v-model="groupByDay" label="Group By Day"></q-toggle>
         <q-btn class="q-ml-lg" color="negative" label="Clear" @click="clear" />
       </template>
-    </q-table>
+    </table-transactions>
   </q-page>
 </template>
 
@@ -33,38 +18,35 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { columns, getExchangeTrades } from "../services/exchange-tx-provider";
-import { processFiles } from "../services/file-handler";
+
 import Vue from "Vue";
+import TableTransactions from "src/components/TableTransactions.vue";
+import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
+import {
+  filterByAccounts,
+  filterByAssets,
+  filterByYear
+} from "../services/filter-service";
 
 export default {
   name: "PageExchangeTransactions",
+  components: { TableTransactions, FilterAccountAsset },
   data() {
     return {
-      accountFilter: "",
       exchangeTrades: Object.freeze([]),
       columns,
       groupByDay: false,
-      pagination: {
-        rowsPerPage: 0
-      },
+      page: 1,
       $store: store,
       $actions: actions
     };
   },
   computed: {
     filtered() {
-      let txs =
-        this.$store.taxYear == "All"
-          ? this.exchangeTrades
-          : this.exchangeTrades.filter(
-              ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
-            );
-      if (this.accountFilter.length != 0) {
-        const filter = this.accountFilter.toLowerCase();
-        txs = txs.filter(function(t) {
-          return (t.account ?? "").toLowerCase() == filter;
-        });
-      }
+      let txs = filterByYear(this.exchangeTrades, this.$store.taxYear);
+      txs = filterByAccounts(txs, this.$store.selectedAccounts, false);
+      txs = filterByAssets(txs, this.$store.selectedAssets);
+
       if (!this.groupByDay) return txs;
       const grouped = [];
       for (const et of txs) {
@@ -97,17 +79,22 @@ export default {
           dateAsset.account += et.account + ",";
       }
       return grouped;
-    },
-    tableHeight() {
-      if (this.$q.screen.height == 0) return;
-      const height = this.$q.screen.height;
-      return (this.$q.screen.sm ? height : height - 50) + "px";
     }
   },
   methods: {
     clear() {
-      this.$actions.setData("exchangeTrades", []);
-      this.exchangeTrades = [];
+      this.$q
+        .dialog({
+          title: "Confirm",
+          message: "Clear ALL exchange trades?",
+          cancel: true,
+          persistent: true
+        })
+        .onOk(() => {
+          this.$actions.setData("exchangeTrades", []);
+          this.exchangeTrades = [];
+          this.$store.updated = true;
+        });
     },
     async load() {
       const exchangeTrades = await getExchangeTrades();
