@@ -5,6 +5,7 @@ import { actions } from "../boot/actions";
 import { store } from "../boot/store";
 
 export const getRunningBalances = async function() {
+  if (!store.updated) return store.runningBalances;
   let mappedData = [];
   const openingPositions = (await actions.getData("openingPositions")) ?? [];
   const offchainTransfers = (await actions.getData("offchainTransfers")) ?? [];
@@ -204,7 +205,11 @@ export const getRunningBalances = async function() {
   assets = [...new Set(assets.map(aa => aa.symbol))];
   assets.sort();
   accountNames.sort();
-  return { runningBalances: mappedData, accountNames, assets };
+  store.assets = assets;
+  store.accounts = accountNames;
+  store.runningBalances = mappedData;
+  store.updated = false;
+  return mappedData;
 };
 
 export const columns = [

@@ -56,8 +56,18 @@ export default {
   },
   methods: {
     clear() {
-      this.$actions.setData("openingPositions", []);
-      this.openingPositions = [];
+      this.$q
+        .dialog({
+          title: "Confirm",
+          message: "Clear opening positions?",
+          cancel: true,
+          persistent: true
+        })
+        .onOk(() => {
+          this.$actions.setData("openingPositions", []);
+          this.openingPositions = [];
+          this.$store.updated = true;
+        });
     },
     async load() {
       const openingPositions =

@@ -1,10 +1,9 @@
 <template>
-  <q-page class="" id="pageRunningBalances">
+  <q-page class="" id="pageRunningBalances" ref="transactionPage">
     <table-transactions
       :title="'Running Balances - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
-      @row-click="click"
     >
       <template v-slot:top-right>
         <filter-account-asset></filter-account-asset>
@@ -91,26 +90,14 @@ export default {
       return Object.freeze(txs);
     }
   },
-  methods: {
-    click(evt, row, index) {
-      if (evt.ctrlKey) {
-        if (row.hash) {
-          window.open("https://etherscan.io/tx/" + row.hash);
-        }
-      }
-    }
-  },
+
   async created() {
-    const {
-      runningBalances,
-      accountNames,
-      assets
-    } = await getRunningBalances();
+    const runningBalances = await getRunningBalances();
     Vue.set(this, "runningBalances", Object.freeze(runningBalances));
     // Vue.set(this, "accounts", Object.freeze(accountNames));
     // Vue.set(this, "assets", Object.freeze(assets));
-    this.$store.assets = assets;
-    this.$store.accounts = accountNames;
+    // this.$store.assets = assets;
+    // this.$store.accounts = accountNames;
   },
   mounted() {
     window.__vue_mounted = "PageTokenTransactions";

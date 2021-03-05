@@ -5,6 +5,7 @@
     :title="title"
     :data="data"
     :columns="columns"
+    @row-click="click"
     v-on="$listeners"
     :pagination.sync="pagination"
     :rows-per-page-options="[0]"
@@ -28,17 +29,27 @@ export default {
   },
   data() {
     return {
-      page: 1
+      page: 1,
+      ready: false
     };
   },
   computed: {
     pagination: {
       get() {
-        if (this.$q.screen.height == 0) return { rowsPerPage: 0 };
+        if (!this.ready) return { rowsPerPage: 1 };
+        if (this.$q.screen.height == 0) return { rowsPerPage: 1 };
+        if (!this.$refs.transactionTable) return { rowsPerPage: 1 };
         const pixels = this.$q.screen.sm
           ? this.$q.screen.height
           : this.$q.screen.height - 50;
-        const rowPixels = pixels - 78 - 28 - 33; //table title, row header, row-footer
+        const titleHeight = this.$refs.transactionTable.$el.firstChild
+          .offsetHeight;
+        const headerHeight = this.$refs.transactionTable.$el.children[1]
+          .firstChild.firstChild.offsetHeight;
+        const footerHeight = this.$refs.transactionTable.$el.children[2]
+          .offsetHeight;
+        const rowPixels = pixels - titleHeight - headerHeight - footerHeight; //table title, row header, row-footer
+        //const rowPixels = pixels - 78 - 28 - 33; //table title, row header, row-footer
         const rows = Math.floor(rowPixels / 28);
         return { rowsPerPage: rows, page: this.page };
       },
@@ -54,6 +65,18 @@ export default {
           : this.$q.screen.height - 50) + "px"
       );
     }
+  },
+  methods: {
+    click(evt, row, index) {
+      if (evt.ctrlKey) {
+        if (row.hash) {
+          window.open("https://etherscan.io/tx/" + row.hash);
+        }
+      }
+    }
+  },
+  mounted() {
+    this.ready = true;
   }
 };
 </script>

@@ -35,7 +35,7 @@ const _store = Vue.observable({
     return !empty(this.apikey);
   }
 });
-
+_store.updated = true;
 export const store = _store;
 window.ononline = () => (store.onLine = true);
 window.onoffline = () => (store.onLine = false);
