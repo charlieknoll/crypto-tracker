@@ -2,6 +2,10 @@
   <q-table
     row-key="txId"
     dense
+    :title="title"
+    :data="data"
+    :columns="columns"
+    @row-click="rowClick"
     :pagination.sync="pagination"
     :rows-per-page-options="[0]"
     :style="{ height: tableHeight }"
@@ -11,8 +15,16 @@
 </template>
 
 <script>
+import { QTable } from "quasar";
 export default {
   name: "TableTransactions",
+  extends: QTable,
+  props: {
+    title: String,
+    data: Array,
+    columns: Array,
+    rowClick: Function
+  },
   data() {
     return {
       page: 1

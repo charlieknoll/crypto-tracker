@@ -1,15 +1,10 @@
 <template>
   <q-page class="" id="pageRunningBalances">
-    <q-table
+    <table-transactions
       :title="'Running Balances - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
-      row-key="txId"
-      dense
-      @row-click="click"
-      :pagination.sync="pagination"
-      :rows-per-page-options="[0]"
-      :style="{ height: tableHeight }"
+      @rowClick="click"
     >
       <template v-slot:top-right>
         <filter-account-asset></filter-account-asset>
@@ -28,7 +23,7 @@
           </q-list>
         </q-btn-dropdown>
       </template>
-    </q-table>
+    </table-transactions>
   </q-page>
 </template>
 
@@ -47,7 +42,7 @@ import {
 import Vue from "Vue";
 import { commaStringToLowerCaseArray } from "../utils/arrayUtil";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
-
+import TableTransactions from "src/components/TableTransactions.vue";
 export default {
   name: "PageTokenTransactions",
   data() {
@@ -62,7 +57,8 @@ export default {
     };
   },
   components: {
-    FilterAccountAsset
+    FilterAccountAsset,
+    TableTransactions
   },
   computed: {
     filtered() {
