@@ -4,6 +4,7 @@
       :title="'Token Transactions - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
+      @row-click="click"
     >
       <template v-slot:top-right>
         <filter-account-asset></filter-account-asset>
@@ -55,6 +56,10 @@ export default {
     }
   },
   methods: {
+    click() {
+      //TODO add method editor popup
+      console.log("test");
+    },
     async load() {
       const tokenTxs = await getTokenTransactions();
       Vue.set(this, "tokenTransactions", Object.freeze(tokenTxs));

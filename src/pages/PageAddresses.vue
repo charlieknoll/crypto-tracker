@@ -137,6 +137,18 @@ export default {
           icon: "warning"
         });
       }
+
+      const prices = actions.getData("prices") ?? [];
+      const pNames = ["tradeDate", "symbol", "price"];
+      const pContent = convertToCsv(prices, pNames);
+      const pStatus = exportFile("prices.csv", pContent, "text/csv");
+      if (pStatus !== true) {
+        this.$q.notify({
+          message: "Browser denied file download...",
+          color: "negative",
+          icon: "warning"
+        });
+      }
     },
     clearUnnamed() {
       const namedAddresses = this.$store.addresses.filter(

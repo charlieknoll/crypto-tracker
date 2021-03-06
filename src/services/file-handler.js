@@ -7,6 +7,7 @@ import { actions } from "../boot/actions";
 import { store } from "../boot/store";
 
 import { Notify } from "quasar";
+import address from "../models/address";
 
 const waitFor = async function(fn, args, ms, interval) {
   const timeout = function(ms) {
@@ -31,6 +32,17 @@ function processAddressFile(content) {
   });
   const addresses = stageOpeningData.map(a => new Address(a));
   actions.setObservableData("addresses", addresses);
+  return addresses.length;
+}
+function processPricesFile(content) {
+  const pricingData = parse(content, {
+    trim: true,
+    columns: true,
+    skip_empty_lines: true
+  });
+
+  actions.setObservableData("prices", pricingData);
+  return pricingData.length;
 }
 export const processFile = function(name, content) {
   store.updated = true;
@@ -46,6 +58,9 @@ export const processFile = function(name, content) {
   }
   if (name.substring(0, 9) == "transfers") {
     return processOffchainTransfersFile(content);
+  }
+  if (name.substring(0, 6) == "prices") {
+    return processPricesFile(content);
   }
   //return message
 };
