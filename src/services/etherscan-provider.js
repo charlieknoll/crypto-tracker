@@ -81,7 +81,7 @@ export const getTransactions = async function() {
 
   //loop through "Owned accounts"
   const currentBlock = await getCurrentBlock();
-  let tokenTxs = [...(store.tokenTxs ?? [])];
+  let tokenTxs = [...(actions.getData("tokenTransactions") ?? [])];
 
   for (const oa of ownedAccounts) {
     try {

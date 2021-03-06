@@ -81,8 +81,9 @@ export default {
       const addresses = [...this.$store.addresses];
       const cleansedAddresses = [];
       for (const a of addresses) {
+        //console.log("address:", a);
         a.lastBlockSync = 0;
-        if (a.name.substring(0, 2) != "0x") {
+        if (a.name && a.name.substring(0, 2) != "0x") {
           cleansedAddresses.push(a);
         }
       }
