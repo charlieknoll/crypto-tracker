@@ -9,52 +9,52 @@ const routes = [
         component: () => import("pages/PageDashboard.vue")
       },
       {
-        name: "settings",
+        name: "Settings",
         path: "settings",
         component: () => import("pages/PageSettings.vue")
       },
       {
-        name: "addresses",
+        name: "Addresses",
         path: "addresses",
         component: () => import("pages/PageAddresses.vue")
       },
       {
-        name: "chain-transactions",
+        name: "Chain Transactions",
         path: "chain-transactions",
         component: () => import("pages/PageChainTransactions.vue")
       },
       {
-        name: "token-transactions",
+        name: "Token Transactions",
         path: "token-transactions",
         component: () => import("pages/PageTokenTransactions.vue")
       },
       {
-        name: "exchange-transactions",
+        name: "Exchange Trades",
         path: "exchange-transactions",
         component: () => import("pages/PageExchangeTransactions.vue")
       },
       {
-        name: "offchain-transfers",
+        name: "Offchain Transfers",
         path: "offchain-transfers",
         component: () => import("pages/PageOffchainTransfers.vue")
       },
       {
-        name: "running-balances",
+        name: "Running Balances",
         path: "running-balances",
         component: () => import("pages/PageRunningBalances.vue")
       },
       {
-        name: "capital-gains",
+        name: "Capital Gains",
         path: "capital-gains",
         component: () => import("pages/PageCapitalGains.vue")
       },
       {
-        name: "opening-positions",
+        name: "Opening Positions",
         path: "opening-positions",
         component: () => import("pages/PageOpeningPositions.vue")
       },
       {
-        name: "import",
+        name: "Import",
         path: "import",
         component: () => import("pages/PageImport.vue")
       }

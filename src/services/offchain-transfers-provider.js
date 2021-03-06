@@ -17,8 +17,8 @@ export const processOffchainTransfersFile = function(tranfers) {
         new Date(t.Date.replaceAll(" ", "")).getTime() / 1000
       ),
       amount: parseFloat(t.Volume),
-      fromAccount: t.FromAccount,
-      toAccount: t.ToAccount,
+      fromName: t.FromAccount,
+      toName: t.ToAccount,
       asset: t.Symbol,
       transferFee: parseFloat(t.Fee),
       transferFeeCurrency: t.FeeCurrency,
@@ -57,15 +57,15 @@ export const columns = [
     align: "left"
   },
   {
-    name: "fromAccount",
+    name: "fromName",
     label: "From Account",
-    field: "fromAccount",
+    field: "fromName",
     align: "left"
   },
   {
-    name: "toAccount",
+    name: "toName",
     label: "To Account",
-    field: "toAccount",
+    field: "toName",
     align: "left"
   },
   {

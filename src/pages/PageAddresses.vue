@@ -176,6 +176,7 @@ export default {
     addresses: {
       handler: function(val) {
         actions.setObservableData("addresses", val);
+        this.$store.updated = true;
       },
       deep: true
     }

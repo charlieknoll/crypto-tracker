@@ -1,78 +1,66 @@
 <template>
   <q-page class="" id="pageOffchainTransfers" ref="page">
-    <q-table
+    <table-transactions
       :title="'Offchain Transfers - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
-      row-key="txId"
-      dense
-      :pagination.sync="pagination"
-      :rows-per-page-options="[0]"
     >
       <template v-slot:top-right>
-        <q-input
-          style="width: 400px"
-          filled
-          debounce="500"
-          v-model="accountFilter"
-          label="Filter by
-        Account Name or Type"
-          stack-label
-          dense
-          clearable
-        />
+        <filter-account-asset></filter-account-asset>
         <q-btn class="q-ml-lg" color="negative" label="Clear" @click="clear" />
       </template>
-    </q-table>
+    </table-transactions>
   </q-page>
 </template>
 
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-
 import { columns } from "../services/offchain-transfers-provider";
 import Vue from "Vue";
+import TableTransactions from "src/components/TableTransactions.vue";
+import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
+import {
+  filterByAccounts,
+  filterByAssets,
+  filterByYear
+} from "../services/filter-service";
 
 export default {
   name: "PageOffchainTransfers",
+  components: { TableTransactions, FilterAccountAsset },
   data() {
     return {
-      accountFilter: "",
       offchainTransfers: Object.freeze([]),
       columns,
-      pagination: {
-        rowsPerPage: 0
-      },
+      page: 1,
       $store: store,
       $actions: actions
     };
   },
   computed: {
     filtered() {
-      let txs =
-        this.$store.taxYear == "All"
-          ? this.offchainTransfers
-          : this.offchainTransfers.filter(
-              ct => parseInt(ct.date.substring(0, 4)) == this.$store.taxYear
-            );
-
-      if (this.accountFilter.length == 0) return txs;
-      const filter = this.accountFilter.toLowerCase();
-      txs = txs.filter(function(t) {
-        return (
-          t.toAccount.toLowerCase().includes(filter) ||
-          t.fromAccount.toLowerCase().includes(filter)
-        );
-      });
+      let txs = filterByYear(this.offchainTransfers, this.$store.taxYear);
+      txs = filterByAccounts(txs, this.$store.selectedAccounts, true);
+      txs = filterByAssets(txs, this.$store.selectedAssets);
 
       return txs;
     }
   },
   methods: {
     clear() {
-      this.$actions.setData("offchainTransfers", []);
-      this.offchainTransfers = [];
+      this.$q
+        .dialog({
+          title: "Confirm",
+          message: "Clear ALL offchain transfers?",
+          cancel: true,
+          persistent: true
+        })
+        .onOk(() => {
+          this.$actions.setData("offchainTransfers", []);
+          this.offchainTransfers = [];
+          this.$store.updated = true;
+        });
     },
     async load() {
       const offchainTransfers =

@@ -8,6 +8,9 @@
 /* eslint-env node */
 
 const envparser = require("./config/envparser");
+const configuration = require("./package.json");
+const VERSION = configuration.version;
+const _env = require("dotenv").config().parsed;
 
 module.exports = function(/* ctx */) {
   return {
@@ -41,7 +44,7 @@ module.exports = function(/* ctx */) {
 
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
-      env: require("dotenv").config().parsed,
+      env: Object.assign({ appName: "CryptoTracker", VERSION }, _env),
       vueRouterMode: "hash", // available values: 'hash', 'history'
 
       // transpile: false,

@@ -12,7 +12,7 @@
         />
 
         <q-toolbar-title>
-          Crypto Tracker
+          {{ appName }}
         </q-toolbar-title>
         <q-spinner
           color="white"
@@ -33,7 +33,7 @@
             </q-item>
           </q-list>
         </q-btn-dropdown>
-        <div>v{{ $q.version }}</div>
+        <div>v{{ version }}</div>
       </q-toolbar>
     </q-header>
 
@@ -183,6 +183,8 @@ export default {
   name: "MainLayout",
   data() {
     return {
+      version: process.env.VERSION,
+      appName: process.env.appName,
       leftDrawerOpen: false,
       files: null,
       menuList,

@@ -28,7 +28,7 @@ export const getRunningBalances = async function() {
     mappedData.push({
       txId: "Tr-I-" + tx.txId,
       timestamp: tx.timestamp,
-      account: tx.toAccount,
+      account: tx.toName,
       date: tx.date,
       amount: tx.amount,
       asset: tx.asset,
@@ -37,7 +37,7 @@ export const getRunningBalances = async function() {
     mappedData.push({
       txId: "Tr-O-" + tx.txId,
       timestamp: tx.timestamp,
-      account: tx.fromAccount,
+      account: tx.fromName,
       date: tx.date,
       amount:
         tx.asset == tx.transferFeeCurrency
