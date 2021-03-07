@@ -23,10 +23,7 @@ export const processOpeningPositionsFile = function(openingData) {
       fee: parseFloat(op.Fee),
       asset: op.Symbol,
       gross:
-        Math.round(
-          (parseFloat(op.Fee) + parseFloat(op.Price) * parseFloat(op.Volume)) *
-            100
-        ) / 100,
+        Math.round(parseFloat(op.Price) * parseFloat(op.Volume) * 100) / 100,
       txId: ethers.utils
         .id(op.Date + op.Symbol + op.Price + op.Amount)
         .substring(2, 9)

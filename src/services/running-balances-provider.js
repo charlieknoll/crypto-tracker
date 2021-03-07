@@ -94,7 +94,8 @@ export const getRunningBalances = async function() {
         asset: tx.asset,
         price: tx.price,
         type: "Token-in",
-        hash: tx.hash
+        hash: tx.hash,
+        action: tx.action
       });
     }
     if (tx.fromAccount.type.toLowerCase().includes("owned")) {
@@ -108,7 +109,8 @@ export const getRunningBalances = async function() {
         asset: tx.asset,
         price: tx.price,
         type: "Token-out",
-        hash: tx.hash
+        hash: tx.hash,
+        action: tx.action
       });
     }
   }
@@ -126,7 +128,8 @@ export const getRunningBalances = async function() {
       amount,
       asset: tx.asset,
       price: tx.price,
-      type: tx.action
+      type: tx.action,
+      action: tx.action
     });
   }
   mappedData = mappedData.sort((a, b) => a.timestamp - b.timestamp);
@@ -241,6 +244,12 @@ export const columns = [
     name: "type",
     label: "Type",
     field: "type",
+    align: "left"
+  },
+  {
+    name: "action",
+    label: "Action",
+    field: "action",
     align: "left"
   },
   {
