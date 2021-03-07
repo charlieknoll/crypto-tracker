@@ -1,27 +1,15 @@
-import { LocalStorage } from "quasar";
-import { store } from "../boot/store";
-import { tokenHistory } from "./token-tx-provider";
+import { getChainTransactions } from "./chain-tx-provider";
+import { getTokenTransactions } from "./token-tx-provider";
+import { getExchangeTrades } from "./exchange-tx-provider";
+import { getOpeningPositions } from "./opening-positions-provider";
+import { getOffchainTransfers } from "./offchain-transfers-provider";
 
-import { history } from "./chain-tx-provider";
-
-import { exchangeHistory } from "./exchange-tx-provider";
-
-function MappedTransaction(tx) {
-  Object.assign(this, tx);
-}
-
-export const gainsHistory = function() {
-  //Add all SELL transactions to an array and sort by timestamp
-
-  //start with tx's and insert any token txs
-
-  //TODO map to common field names
-  let mappedTxs = history().filter(tx => tx.methodName.includes("SELL"));
-
-  let _tokenHistory = tokenHistory().filter(
+function getSellTxs(chainTxs, tokenTxs, exchangeTrades, offchainTransfers) {
+  let sellTxs = chainTxs.filter(tx => tx.methodName.includes("SELL"));
+  let _sellTokenTxs = tokenTxs.filter(
     tx => tx.action.includes("SELL") && tx.displayAmount != 0.0
   );
-  _tokenHistory = _tokenHistory.map(tx => {
+  _sellTokenTxs = _sellTokenTxs.map(tx => {
     tx.asset = tx.asset;
     tx.account = tx.fromAccount.name;
     tx.amount = tx.displayAmount;
@@ -31,19 +19,33 @@ export const gainsHistory = function() {
     tx.lots = 0;
     return tx;
   });
-  mappedTxs = mappedTxs.concat(_tokenHistory);
-  mappedTxs = mappedTxs.concat(
-    exchangeHistory().filter(tx => tx.action.includes("SELL"))
+  sellTxs = sellTxs.concat(_sellTokenTxs);
+
+  sellTxs = sellTxs.concat(
+    exchangeTrades.filter(tx => tx.action.includes("SELL"))
   );
-  mappedTxs.sort((a, b) => a.timestamp - b.timestamp);
+
+  //TODO add transfer fees to sell txs
+
+  sellTxs.sort((a, b) => a.timestamp - b.timestamp);
+  return sellTxs;
+}
+export const getCapitalGains = async function() {
+  const chainTxs = await getChainTransactions();
+  const tokenTxs = await getTokenTransactions();
+  const exchangeTrades = await getExchangeTrades();
+  const openingPositions = await getOpeningPositions();
+  const offchainTransfers = await getOffchainTransfers();
+
+  sellTxs = getSellTxs(chainTxs, tokenTxs, exchangeTrades, offchainTransfers);
 
   //Create BUY txs
   //TODO map buy fields on ETH tx's
-  let buyTxs = history().filter(tx => tx.methodName.includes("BUY"));
-  let _buyTokenHistory = tokenHistory().filter(
+  let buyTxs = chainTxs.filter(tx => tx.methodName.includes("BUY"));
+  let _buyTokenTxs = tokenTxs.filter(
     tx => tx.action.includes("BUY") && tx.displayAmount != 0.0
   );
-  _buyTokenHistory = _buyTokenHistory.map(tx => {
+  _buyTokenTxs = _buyTokenTxs.map(tx => {
     tx.asset = tx.asset;
     tx.account = tx.toAccount.name;
     tx.amount = tx.displayAmount;
@@ -51,8 +53,8 @@ export const gainsHistory = function() {
     tx.disposedAmount = 0.0;
     return tx;
   });
-  buyTxs = buyTxs.concat(_buyTokenHistory);
-  let _exchangeHistory = exchangeHistory()
+  buyTxs = buyTxs.concat(_buyTokenTxs);
+  let _buyExchangeTrades = exchangeTrades
     .filter(tx => tx.action.includes("BUY"))
     .map(tx => {
       tx.cost = tx.gross + tx.fee;
@@ -60,11 +62,13 @@ export const gainsHistory = function() {
       return tx;
     });
 
-  buyTxs = buyTxs.concat(_exchangeHistory);
+  buyTxs = buyTxs.concat(_buyExchangeTrades);
+  //TODO add opening positions to buy txs
+
   buyTxs.sort((a, b) => a.timestamp - b.timestamp);
   //Calc gains for each sell
   let runningGain = 0.0;
-  for (const tx of mappedTxs) {
+  for (const tx of sellTxs) {
     //
     let buyTx = buyTxs.find(
       btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
@@ -90,7 +94,7 @@ export const gainsHistory = function() {
     runningGain += tx.shortTermGain;
     tx.runningGain = runningGain;
   }
-  return mappedTxs;
+  return sellTxs;
 };
 export const columns = [
   {
