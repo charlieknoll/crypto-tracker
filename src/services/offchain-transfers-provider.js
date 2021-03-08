@@ -10,6 +10,7 @@ export const processOffchainTransfersFile = function(tranfers) {
     skip_empty_lines: true
   });
   const mappedData = stageTransfers.map(function(t) {
+    //TODO add usd fee so fees can be added to cap gains
     return {
       timestamp: new Date(t.Date).timestamp,
       date: t.Date.substring(0, 10),

@@ -4,31 +4,106 @@ import { getExchangeTrades } from "./exchange-tx-provider";
 import { getOpeningPositions } from "./opening-positions-provider";
 import { getOffchainTransfers } from "./offchain-transfers-provider";
 
-function getSellTxs(chainTxs, tokenTxs, exchangeTrades, offchainTransfers) {
-  let sellTxs = chainTxs.filter(tx => tx.methodName.includes("SELL"));
+import { getPrice } from "./price-provider";
+
+async function getSellTxs(
+  chainTxs,
+  tokenTxs,
+  exchangeTrades,
+  offchainTransfers
+) {
+  //TODO don't include error tx's in sellTx's
+  let sellTxs = chainTxs.filter(
+    tx => tx.toAccount.type == "Spending" && !tx.isError
+  );
+  let feeTxs = chainTxs.filter(
+    tx =>
+      tx.fee > 0.0 &&
+      tx.toAccount.type != "Spending" &&
+      tx.toAccount.type != "Token"
+  );
+  let offChainFeeTxs = offchainTransfers.filter(tx => tx.fee > 0.0);
+  _offChainFeeTxs = [];
+  for (const tx of offChainFeeTxs) {
+    if (tx.feeCurrency != "USD") {
+      const price = await getPrice(tx.feeCurrency, tx.date);
+      tx.gross = tx.transferFee * price;
+      tx.action = "FEE";
+      tx.fee = 0.0;
+      tx.asset = tx.feeCurrency;
+      _offChainFeeTxs.push(tx);
+    }
+  }
+
+  //TODO map ethGasFee to amount, fee = 0.0, asset = ETH
+  feeTxs = chainTxs.map(tx => {
+    tx.timestamp = tx.timestamp - 1;
+    tx.amount = tx.ethGasFee;
+    tx.fee = 0.0;
+    tx.gross = tx.fee;
+    tx.action = "FEE";
+  });
+
   let _sellTokenTxs = tokenTxs.filter(
     tx => tx.action.includes("SELL") && tx.displayAmount != 0.0
   );
   _sellTokenTxs = _sellTokenTxs.map(tx => {
-    tx.asset = tx.asset;
     tx.account = tx.fromAccount.name;
     tx.amount = tx.displayAmount;
-    tx.proceeds = tx.gross - tx.fee;
-    tx.allocatedAmount = 0.0;
-    tx.shortTermGain = 0.0;
-    tx.lots = 0;
     return tx;
   });
-  sellTxs = sellTxs.concat(_sellTokenTxs);
 
+  sellTxs = sellTxs.concat(feeTxs);
+  sellTxs = sellTxs.concat(_offChainFeeTxs);
+  sellTxs = sellTxs.concat(_sellTokenTxs);
   sellTxs = sellTxs.concat(
     exchangeTrades.filter(tx => tx.action.includes("SELL"))
   );
-
   //TODO add transfer fees to sell txs
 
+  sellTxs = sellTxs.map(tx => {
+    tx.proceeds = tx.gross - tx.fee;
+    tx.allocatedAmount = 0.0;
+    tx.shortTermGain = 0.0;
+    tx.longTermGain = 0.0;
+    tx.longLots = 0;
+    tx.shortLots = 0;
+    return tx;
+  });
   sellTxs.sort((a, b) => a.timestamp - b.timestamp);
   return sellTxs;
+}
+function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
+  //Create BUY txs
+  let buyTxs = chainTxs.filter(
+    tx => tx.fromAccount.type == "Income" && tx.amount > 0.0
+  );
+
+  let _buyTokenTxs = tokenTxs.filter(
+    tx =>
+      (tx.action.includes("BUY") || tx.action.includes("INCOME")) &&
+      tx.displayAmount != 0.0
+  );
+  _buyTokenTxs = _buyTokenTxs.map(tx => {
+    tx.account = tx.toAccount.name;
+    tx.amount = tx.displayAmount;
+    return tx;
+  });
+  buyTxs = buyTxs.concat(_buyTokenTxs);
+  let _buyExchangeTrades = exchangeTrades.filter(tx =>
+    tx.action.includes("BUY")
+  );
+  buyTxs = buyTxs.concat(_buyExchangeTrades);
+
+  buyTxs = buyTxs.concat(openingPositions);
+
+  buyTxs = buyTxs.map(tx => {
+    tx.cost = tx.gross + tx.fee;
+    tx.disposedAmount = 0.0;
+    return tx;
+  });
+  buyTxs.sort((a, b) => a.timestamp - b.timestamp);
+  return buyTxs;
 }
 export const getCapitalGains = async function() {
   const chainTxs = await getChainTransactions();
@@ -37,42 +112,23 @@ export const getCapitalGains = async function() {
   const openingPositions = await getOpeningPositions();
   const offchainTransfers = await getOffchainTransfers();
 
-  sellTxs = getSellTxs(chainTxs, tokenTxs, exchangeTrades, offchainTransfers);
-
-  //Create BUY txs
-  //TODO map buy fields on ETH tx's
-  let buyTxs = chainTxs.filter(tx => tx.methodName.includes("BUY"));
-  let _buyTokenTxs = tokenTxs.filter(
-    tx => tx.action.includes("BUY") && tx.displayAmount != 0.0
+  let sellTxs = await getSellTxs(
+    chainTxs,
+    tokenTxs,
+    exchangeTrades,
+    offchainTransfers
   );
-  _buyTokenTxs = _buyTokenTxs.map(tx => {
-    tx.asset = tx.asset;
-    tx.account = tx.toAccount.name;
-    tx.amount = tx.displayAmount;
-    tx.cost = tx.gross + tx.fee;
-    tx.disposedAmount = 0.0;
-    return tx;
-  });
-  buyTxs = buyTxs.concat(_buyTokenTxs);
-  let _buyExchangeTrades = exchangeTrades
-    .filter(tx => tx.action.includes("BUY"))
-    .map(tx => {
-      tx.cost = tx.gross + tx.fee;
-      tx.disposedAmount = 0.0;
-      return tx;
-    });
+  let buyTxs = getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions);
 
-  buyTxs = buyTxs.concat(_buyExchangeTrades);
-  //TODO add opening positions to buy txs
-
-  buyTxs.sort((a, b) => a.timestamp - b.timestamp);
   //Calc gains for each sell
+
   let runningGain = 0.0;
   for (const tx of sellTxs) {
     //
     let buyTx = buyTxs.find(
       btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
     );
+    //TODO adjust cost basis for fees from sale tx
     let i = 0;
     while (tx.allocatedAmount != tx.amount && buyTx && i < 100) {
       const allocatedAmount =

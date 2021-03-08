@@ -64,9 +64,18 @@ export default {
       return Object.freeze(txs);
     }
   },
+  methods: {
+    async load() {
+      const chainTransactions = await getChainTransactions();
+      Vue.set(this, "chainTransactions", Object.freeze(chainTransactions));
+    }
+  },
   async created() {
-    const chainTxs = await getChainTransactions();
-    Vue.set(this, "chainTransactions", Object.freeze(chainTxs));
+    await this.load();
+    store.onload = this.load;
+  },
+  destroyed() {
+    store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "pageChainTransactions";

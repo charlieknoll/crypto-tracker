@@ -17,7 +17,7 @@ export const ChainTransaction = function() {
       this.hash += "-" + tx.seqNo;
       this.txId += "-" + tx.seqNo;
     }
-
+    this.asset = "ETH";
     this.toName = this.toAccount ? this.toAccount.name : tx.to.substring(0, 8);
     this.isError = tx.isError == "1";
     this.fromName = this.fromAccount
@@ -55,6 +55,7 @@ export const ChainTransaction = function() {
 };
 export const getChainTransactions = async function() {
   const data = LocalStorage.getItem("chainTransactions") ?? [];
+  actions.refreshStoreData("addresses");
   const internalTransactions =
     LocalStorage.getItem("internalTransactions") ?? [];
   let hash;

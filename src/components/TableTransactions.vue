@@ -70,7 +70,8 @@ export default {
     click(evt, row, index) {
       if (evt.ctrlKey) {
         if (row.hash) {
-          window.open("https://etherscan.io/tx/" + row.hash);
+          const txId = row.hash.split("-");
+          window.open("https://etherscan.io/tx/" + txId[0]);
         }
       }
     }

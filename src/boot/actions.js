@@ -3,6 +3,7 @@ import Vue from "vue";
 import { LocalStorage } from "quasar";
 import { store } from "./store";
 import Address from "../models/address";
+import { _ } from "core-js";
 
 export const actions = {
   store: store,
@@ -18,6 +19,10 @@ export const actions = {
   },
   getData: function(key) {
     return LocalStorage.getItem(key);
+  },
+  refreshStoreData: function(key) {
+    const val = this.getData(key);
+    this.setData(key, val);
   },
   mergeArrayToData: function(key, val, compareFunc) {
     const array = LocalStorage.getItem(key) ?? [];
@@ -48,7 +53,22 @@ export const actions = {
     store.addresses.push(address);
     this.setData("addresses", store.addresses);
     return address;
+  },
+  markUpdated: function() {
+    const timestamp = new Date().getTime() - 1000;
+    this.setData("lastSyncTimestamp", timestamp);
+    return timestamp;
   }
 };
 
 Vue.prototype.$actions = actions;
+// let lastSyncTimestamp = actions.markUpdated();
+// const interval = setInterval(() => {
+//   const _lastSyncTimestamp = actions.getData("lastSyncTimestamp");
+//   if (lastSyncTimestamp < _lastSyncTimestamp) {
+//     lastSyncTimestamp = _lastSyncTimestamp;
+//     if (store.onload) {
+//       store.onload();
+//     }
+//   }
+// }, 500);

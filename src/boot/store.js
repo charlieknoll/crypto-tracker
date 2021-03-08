@@ -24,7 +24,8 @@ const _store = Vue.observable({
   trackedTokens: LocalStorage.getItem("trackedTokens") ?? "",
   trackSpentTokens: LocalStorage.getItem("trackSpentTokens") ?? true,
   autoImport: LocalStorage.getItem("autoImport") ?? false,
-  addresses: (LocalStorage.getItem("addresses") ?? []).map(a => new Address(a)),
+  //addresses: (LocalStorage.getItem("addresses") ?? []).map(a => new Address(a)),
+  addresses: LocalStorage.getItem("addresses") ?? [],
   openingPositions: LocalStorage.getItem("openingPositions") ?? [],
   offchainTransfers: LocalStorage.getItem("offchainTransfers") ?? [],
   exchangeTrades: LocalStorage.getItem("exchangeTrades") ?? [],
@@ -39,5 +40,4 @@ _store.updated = true;
 export const store = _store;
 window.ononline = () => (store.onLine = true);
 window.onoffline = () => (store.onLine = false);
-
 Vue.prototype.$store = store;
