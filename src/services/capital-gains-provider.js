@@ -1,9 +1,7 @@
 import { getChainTransactions } from "./chain-tx-provider";
 import { getTokenTransactions } from "./token-tx-provider";
 import { getExchangeTrades } from "./exchange-tx-provider";
-import { getOpeningPositions } from "./opening-positions-provider";
-import { getOffchainTransfers } from "./offchain-transfers-provider";
-
+import { actions } from "../boot/actions";
 import { getPrice } from "./price-provider";
 
 async function getSellTxs(
@@ -20,37 +18,43 @@ async function getSellTxs(
     tx =>
       tx.fee > 0.0 &&
       tx.toAccount.type != "Spending" &&
-      tx.toAccount.type != "Token"
+      tx.toAccount.type != "Token" &&
+      tx.fromName != "GENESIS"
   );
-  let offChainFeeTxs = offchainTransfers.filter(tx => tx.fee > 0.0);
-  _offChainFeeTxs = [];
+
+  //TODO map ethGasFee to amount, fee = 0.0, asset = ETH
+  feeTxs = feeTxs.map(tx => {
+    const feeTx = Object.assign({}, tx);
+    feeTx.timestamp = tx.timestamp - 1;
+    feeTx.amount = tx.ethGasFee;
+    feeTx.fee = 0.0;
+    feeTx.gross = tx.fee;
+    feeTx.action = "FEE";
+    return feeTx;
+  });
+
+  let offChainFeeTxs = offchainTransfers.filter(tx => tx.transferFee > 0.0);
+  const _offChainFeeTxs = [];
   for (const tx of offChainFeeTxs) {
-    if (tx.feeCurrency != "USD") {
-      const price = await getPrice(tx.feeCurrency, tx.date);
-      tx.gross = tx.transferFee * price;
+    if (tx.transferFeeCurrency != "USD") {
+      tx.price = await getPrice(tx.transferFeeCurrency, tx.date);
+      tx.gross = tx.transferFee * tx.price;
+      tx.amount = tx.transferFee;
       tx.action = "FEE";
       tx.fee = 0.0;
-      tx.asset = tx.feeCurrency;
+      tx.asset = tx.transferFeeCurrency;
       _offChainFeeTxs.push(tx);
     }
   }
-
-  //TODO map ethGasFee to amount, fee = 0.0, asset = ETH
-  feeTxs = chainTxs.map(tx => {
-    tx.timestamp = tx.timestamp - 1;
-    tx.amount = tx.ethGasFee;
-    tx.fee = 0.0;
-    tx.gross = tx.fee;
-    tx.action = "FEE";
-  });
 
   let _sellTokenTxs = tokenTxs.filter(
     tx => tx.action.includes("SELL") && tx.displayAmount != 0.0
   );
   _sellTokenTxs = _sellTokenTxs.map(tx => {
-    tx.account = tx.fromAccount.name;
-    tx.amount = tx.displayAmount;
-    return tx;
+    const sellTx = Object.assign({}, tx);
+    sellTx.account = tx.fromAccount.name;
+    sellTx.amount = tx.displayAmount;
+    return sellTx;
   });
 
   sellTxs = sellTxs.concat(feeTxs);
@@ -107,11 +111,11 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
 }
 export const getCapitalGains = async function() {
   const chainTxs = await getChainTransactions();
-  const tokenTxs = await getTokenTransactions();
+  let tokenTxs = await getTokenTransactions();
   const exchangeTrades = await getExchangeTrades();
-  const openingPositions = await getOpeningPositions();
-  const offchainTransfers = await getOffchainTransfers();
-
+  const openingPositions = (await actions.getData("openingPositions")) ?? [];
+  const offchainTransfers = (await actions.getData("offchainTransfers")) ?? [];
+  tokenTxs = tokenTxs.filter(tx => tx.tracked);
   let sellTxs = await getSellTxs(
     chainTxs,
     tokenTxs,

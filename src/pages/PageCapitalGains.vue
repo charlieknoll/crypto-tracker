@@ -1,60 +1,67 @@
 <template>
   <q-page class="" id="pageCapitalGains">
-    <q-table
+    <table-transactions
       title="Capital Gains"
-      :data="history"
+      :data="filtered"
       :columns="columns"
-      row-key="txId"
-      dense
-      :pagination.sync="pagination"
-      :rows-per-page-options="[0]"
-    />
+    >
+      <filter-account-asset></filter-account-asset>
+    </table-transactions>
   </q-page>
 </template>
 
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { gainsHistory, columns } from "../services/capital-gains-provider";
+import { getCapitalGains, columns } from "../services/capital-gains-provider";
+import TableTransactions from "src/components/TableTransactions.vue";
+import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
+import Vue from "Vue";
 
+import {
+  filterByAccounts,
+  filterByAssets,
+  filterByYear
+} from "../services/filter-service";
 export default {
   name: "PageCapitalGains",
   data() {
     return {
-      filter: "",
-      history: [],
+      capitalGains: Object.freeze([]),
       columns,
-      pagination: {
-        rowsPerPage: 0
-      },
+      page: 1,
       $store: store,
       $actions: actions
     };
   },
-  // computed: {
-  //   filteredHistory() {
-  //     if (this.filter.length == 0) return this.history;
-  //     const filter = this.filter;
-  //     const filtered = this.history.filter(function(a) {
-  //       return (
-  //         (a.name && a.name.includes(filter)) ||
-  //         (a.address && a.address.includes(filter)) ||
-  //         !a.name ||
-  //         !a.address
-  //       );
-  //     });
-
-  //     return filtered;
-  //   }
-  // },
+  components: {
+    FilterAccountAsset,
+    TableTransactions
+  },
+  computed: {
+    filtered() {
+      let txs = this.capitalGains;
+      txs = filterByAssets(txs, this.$store.selectedAssets);
+      txs = filterByAccounts(txs, this.$store.selectedAccounts);
+      txs = filterByYear(txs, this.$store.taxYear);
+      return Object.freeze(txs);
+    }
+  },
   methods: {
-    // click(evt, row, index) {
-    //   window.open("https://etherscan.io/tx/" + row.hash);
-    // }
+    async load() {
+      const capitalGains = await getCapitalGains();
+      Vue.set(this, "runningBalances", Object.freeze(capitalGains));
+    }
+  },
+  async created() {
+    await this.load();
+    store.onload = this.load();
+  },
+  destroyed() {
+    store.onload = null;
   },
   mounted() {
-    window.__vue_mounted = this.name;
-    this.history = gainsHistory();
+    window.__vue_mounted = "PageCapitalGains";
   }
 };
 </script>
