@@ -14,12 +14,22 @@ async function getSellTxs(
   let sellTxs = chainTxs.filter(
     tx => tx.toAccount.type == "Spending" && !tx.isError
   );
+  sellTxs = sellTxs.map(tx => {
+    const sellTx = Object.assign({}, tx);
+    sellTx.account = tx.fromName;
+    sellTx.amount = tx.amount + tx.fee;
+    sellTx.fee = 0.0;
+    sellTx.action = "SPEND:" + (tx.action ?? tx.toAccount.name);
+    return sellTx;
+  });
+
   let feeTxs = chainTxs.filter(
     tx =>
       tx.fee > 0.0 &&
-      tx.toAccount.type != "Spending" &&
-      tx.toAccount.type != "Token" &&
-      tx.fromName != "GENESIS"
+      ((tx.toAccount.type != "Spending" &&
+        tx.toAccount.type != "Token" &&
+        tx.fromName != "GENESIS") ||
+        tx.isError)
   );
 
   //TODO map ethGasFee to amount, fee = 0.0, asset = ETH
@@ -29,7 +39,8 @@ async function getSellTxs(
     feeTx.amount = tx.ethGasFee;
     feeTx.fee = 0.0;
     feeTx.gross = tx.fee;
-    feeTx.action = "FEE";
+    feeTx.action = tx.isError ? "ERROR FEE" : "TRANSFER FEE";
+    feeTx.account = tx.fromName;
     return feeTx;
   });
 
@@ -191,7 +202,8 @@ export const columns = [
     name: "amount",
     label: "Amount",
     field: "amount",
-    align: "right"
+    align: "right",
+    format: (val, row) => `${(parseFloat(val) ?? 0.0).toFixed(4)}`
   },
   {
     name: "fee",

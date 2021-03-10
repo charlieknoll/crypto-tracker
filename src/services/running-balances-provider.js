@@ -55,7 +55,7 @@ export const getRunningBalances = async function() {
         timestamp: tx.timestamp,
         account: tx.toAccount.name,
         date: tx.date,
-        amount: tx.isError ? 0.0 : tx.ethAmount,
+        amount: tx.isError ? 0.0 : tx.amount,
         asset: "ETH",
         price: tx.price,
         type: "Chain-in",

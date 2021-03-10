@@ -66,6 +66,11 @@ export default {
       );
     }
   },
+  watch: {
+    data() {
+      this.page = 1;
+    }
+  },
   methods: {
     click(evt, row, index) {
       if (evt.ctrlKey) {

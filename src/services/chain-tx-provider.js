@@ -23,8 +23,8 @@ export const ChainTransaction = function() {
     this.fromName = this.fromAccount
       ? this.fromAccount.name
       : tx.from.substring(0, 8);
-    this.ethAmount = bnToFloat(BigNumber.from(tx.value), 18);
-    this.amount = ethers.utils.formatEther(BigNumber.from(tx.value)) + " ETH";
+    this.amount = bnToFloat(BigNumber.from(tx.value), 18);
+    //this.amount = ethers.utils.formatEther(BigNumber.from(tx.value));
     this.methodName = getMethodName(tx.input);
     //TODO handle income and spending if necessary
     if (this.methodName == "") this.methodName = "TRANSFER";
