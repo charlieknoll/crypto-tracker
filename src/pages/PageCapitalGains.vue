@@ -50,7 +50,7 @@ export default {
   methods: {
     async load() {
       const capitalGains = await getCapitalGains();
-      Vue.set(this, "runningBalances", Object.freeze(capitalGains));
+      Vue.set(this, "capitalGains", Object.freeze(capitalGains));
     }
   },
   async created() {
