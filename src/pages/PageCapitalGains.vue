@@ -5,7 +5,9 @@
       :data="filtered"
       :columns="columns"
     >
-      <filter-account-asset></filter-account-asset>
+      <template v-slot:top-right>
+        <filter-account-asset></filter-account-asset>
+      </template>
     </table-transactions>
   </q-page>
 </template>
@@ -29,7 +31,6 @@ export default {
     return {
       capitalGains: Object.freeze([]),
       columns,
-      page: 1,
       $store: store,
       $actions: actions
     };
@@ -55,7 +56,7 @@ export default {
   },
   async created() {
     await this.load();
-    store.onload = this.load();
+    store.onload = this.load;
   },
   destroyed() {
     store.onload = null;

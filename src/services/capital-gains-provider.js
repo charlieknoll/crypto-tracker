@@ -26,9 +26,7 @@ async function getSellTxs(
   let feeTxs = chainTxs.filter(
     tx =>
       tx.fee > 0.0 &&
-      ((tx.toAccount.type != "Spending" &&
-        tx.toAccount.type != "Token" &&
-        tx.fromName != "GENESIS") ||
+      ((tx.toAccount.type != "Spending" && tx.fromName != "GENESIS") ||
         tx.isError)
   );
 
@@ -39,7 +37,13 @@ async function getSellTxs(
     feeTx.amount = tx.ethGasFee;
     feeTx.fee = 0.0;
     feeTx.gross = tx.fee;
-    feeTx.action = tx.isError ? "ERROR FEE" : "TRANSFER FEE";
+    feeTx.action = tx.isError
+      ? "ERROR FEE"
+      : tx.methodName == "TRANSFER"
+      ? "TRANSFER FEE"
+      : tx.toAccount.type == "Token"
+      ? "TOKEN FEE"
+      : "FEE";
     feeTx.account = tx.fromName;
     return feeTx;
   });
@@ -93,6 +97,14 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
   let buyTxs = chainTxs.filter(
     tx => tx.fromAccount.type == "Income" && tx.amount > 0.0
   );
+  buyTxs = buyTxs.map(tx => {
+    const buyTx = Object.assign({}, tx);
+    buyTx.account = tx.fromName;
+    buyTx.amount = tx.amount + tx.fee;
+    buyTx.fee = 0.0;
+    buyTx.action = "INCOME:" + (tx.action ?? tx.fromName);
+    return buyTx;
+  });
 
   let _buyTokenTxs = tokenTxs.filter(
     tx =>
@@ -100,9 +112,10 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
       tx.displayAmount != 0.0
   );
   _buyTokenTxs = _buyTokenTxs.map(tx => {
-    tx.account = tx.toAccount.name;
-    tx.amount = tx.displayAmount;
-    return tx;
+    const buyTx = Object.assign({}, tx);
+    buyTx.account = tx.toAccount.name;
+    buyTx.amount = tx.displayAmount;
+    return buyTx;
   });
   buyTxs = buyTxs.concat(_buyTokenTxs);
   let _buyExchangeTrades = exchangeTrades.filter(tx =>
