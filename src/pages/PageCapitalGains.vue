@@ -7,6 +7,20 @@
     >
       <template v-slot:top-right>
         <filter-account-asset></filter-account-asset>
+        <q-btn-dropdown stretch flat :label="gainsGrouping">
+          <q-list>
+            <q-item
+              v-for="n in groups"
+              :key="`x.${n}`"
+              clickable
+              v-close-popup
+              tabindex="0"
+              @click="gainsGrouping = n"
+            >
+              <q-item-label>{{ n }}</q-item-label>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </template>
     </table-transactions>
   </q-page>
@@ -29,6 +43,8 @@ export default {
   name: "PageCapitalGains",
   data() {
     return {
+      groups: ["Detailed", "Totals"],
+      gainsGrouping: "Detailed",
       capitalGains: Object.freeze([]),
       columns,
       $store: store,
@@ -45,7 +61,32 @@ export default {
       txs = filterByAssets(txs, this.$store.selectedAssets);
       txs = filterByAccounts(txs, this.$store.selectedAccounts);
       txs = filterByYear(txs, this.$store.taxYear);
-      return Object.freeze(txs);
+      if (this.gainsGrouping == "Detailed") return Object.freeze(txs);
+      //group by year
+      const totals = [];
+
+      for (const tx of txs) {
+        let total = totals.find(t => t.asset == tx.asset);
+        if (!total) {
+          total = {
+            asset: tx.asset,
+            amount: 0.0,
+            fee: 0.0,
+            gross: 0.0,
+            proceeds: 0.0,
+            shortTermGain: 0.0,
+            longTermGain: 0.0
+          };
+          totals.push(total);
+        }
+        total.amount += tx.amount;
+        total.fee += tx.fee;
+        total.gross += tx.gross;
+        total.proceeds += tx.proceeds;
+        total.shortTermGain += tx.shortTermGain;
+        total.longTermGain += tx.longTermGain;
+      }
+      return totals;
     }
   },
   methods: {

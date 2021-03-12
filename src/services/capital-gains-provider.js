@@ -3,7 +3,7 @@ import { getTokenTransactions } from "./token-tx-provider";
 import { getExchangeTrades } from "./exchange-tx-provider";
 import { actions } from "../boot/actions";
 import { getPrice } from "./price-provider";
-
+import { formatCurrency } from "../utils/moneyUtils";
 async function getSellTxs(
   chainTxs,
   tokenTxs,
@@ -237,42 +237,36 @@ export const columns = [
     label: "Fee",
     field: "fee",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => formatCurrency(val)
   },
   {
     name: "gross",
     label: "Gross",
     field: "gross",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => formatCurrency(val)
   },
   {
     name: "proceeds",
     label: "Proceeds",
     field: "proceeds",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => formatCurrency(val)
   },
   {
     name: "shortTermGain",
     label: "Short Term Gain",
     field: "shortTermGain",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => formatCurrency(val)
   },
-  {
-    name: "runningGain",
-    label: "Running Gain",
-    field: "runningGain",
-    align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
-  },
+
   {
     name: "longTermGain",
     label: "Long Term Gain",
     field: "longTermGain",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => formatCurrency(val)
   },
   {
     name: "longLots",
@@ -285,12 +279,6 @@ export const columns = [
     label: "S Lots",
     field: "shortLots",
     align: "right"
-  },
-  {
-    name: "acquiredDate",
-    label: "Acquired Date",
-    field: "acquiredDate",
-    align: "left"
   },
   {
     name: "unitsRemaining",

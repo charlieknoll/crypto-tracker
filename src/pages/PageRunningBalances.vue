@@ -49,7 +49,6 @@ export default {
       balanceGrouping: "Detailed",
       runningBalances: Object.freeze([]),
       columns: columns,
-      page: 1,
       $store: store,
       $actions: actions
     };

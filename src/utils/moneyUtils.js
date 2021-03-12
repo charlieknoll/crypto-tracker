@@ -20,3 +20,11 @@ export const bnToFloat = function(bn, decimals) {
     return 0.0;
   }
 };
+export const formatCurrency = function(val) {
+  const formatted = `$${(val ?? 0.0).toLocaleString("en-US", {
+    style: "decimal",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+  return formatted;
+};
