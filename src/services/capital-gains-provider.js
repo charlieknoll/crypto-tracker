@@ -159,24 +159,38 @@ export const getCapitalGains = async function() {
     //TODO adjust cost basis for fees from sale tx
     let i = 0;
     while (tx.allocatedAmount != tx.amount && buyTx && i < 100) {
+      const remainingAmount = tx.amount - tx.allocatedAmount;
       const allocatedAmount =
-        tx.amount <= buyTx.amount - buyTx.disposedAmount
-          ? tx.amount
+        remainingAmount <= buyTx.amount - buyTx.disposedAmount
+          ? remainingAmount
           : buyTx.amount - buyTx.disposedAmount;
       buyTx.disposedAmount += allocatedAmount;
       tx.allocatedAmount += allocatedAmount;
       //TODO determine long vs short
-      tx.shortTermGain +=
+      const daysHeld =
+        (new Date(tx.date).getTime() - new Date(buyTx.date).getTime()) /
+        1000 /
+        60 /
+        60 /
+        24;
+      const gain =
         (allocatedAmount / tx.amount) * tx.proceeds -
         (allocatedAmount / buyTx.amount) * buyTx.cost;
-      tx.lots += 1;
+
+      if (daysHeld > 365) {
+        tx.longTermGain += gain;
+        tx.longLots += 1;
+      } else {
+        tx.shortTermGain += gain;
+        tx.shortLots += 1;
+      }
       i++;
       buyTx = buyTxs.find(
         btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
       );
+      runningGain += gain;
+      tx.runningGain = runningGain;
     }
-    runningGain += tx.shortTermGain;
-    tx.runningGain = runningGain;
   }
   return sellTxs;
 };
@@ -256,14 +270,20 @@ export const columns = [
   {
     name: "longTermGain",
     label: "Long Term Gain",
-    field: "LongTermGain",
+    field: "longTermGain",
     align: "right",
     format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
   },
   {
-    name: "lots",
-    label: "Lots",
-    field: "lots",
+    name: "longLots",
+    label: "L Lots",
+    field: "longLots",
+    align: "right"
+  },
+  {
+    name: "shortLots",
+    label: "S Lots",
+    field: "shortLots",
     align: "right"
   },
   {
