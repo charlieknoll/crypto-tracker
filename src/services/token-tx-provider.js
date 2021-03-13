@@ -180,6 +180,8 @@ function TokenTransaction() {
         taxCode = "DONATION";
       } else if (this.parentTx.toAccount.type == "Expense") {
         taxCode = "EXPENSE";
+      } else if (this.parentTx.toAccount.type == "Token") {
+        taxCode = "SELL";
       } else {
         taxCode = "TRANSFER";
       }
