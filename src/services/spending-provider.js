@@ -17,11 +17,9 @@ export const getSpending = async function() {
     chainTransactions
       .filter(
         tx =>
-          spendingCodes.findIndex(s => s == tx.methodName) > -1 &&
-          tx.gross != 0.0
+          spendingCodes.findIndex(s => s == tx.taxCode) > -1 && tx.gross != 0.0
       )
       .map(tx => {
-        tx.action = tx.methodName;
         tx.account = tx.toAccount.type.includes("Owned")
           ? tx.fromName
           : tx.toName;
@@ -37,7 +35,6 @@ export const getSpending = async function() {
         tx => spendingCodes.findIndex(s => s == tx.taxCode) > -1 && tx.tracked
       )
       .map(tx => {
-        tx.action = tx.taxCode;
         tx.amount = tx.decimalAmount;
         tx.account = tx.toAccount.type.includes("Owned")
           ? tx.fromName
@@ -79,9 +76,9 @@ export const columns = [
     align: "left"
   },
   {
-    name: "action",
-    label: "Action",
-    field: "action",
+    name: "taxCode",
+    label: "Tax Code",
+    field: "taxCode",
     align: "left"
   },
   {

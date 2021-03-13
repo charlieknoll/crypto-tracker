@@ -26,28 +26,26 @@ export const ChainTransaction = function() {
     //this.amount = ethers.utils.formatEther(BigNumber.from(tx.value));
     this.methodName = getMethodName(tx.input);
     //TODO handle income and spending if necessary
-    if (this.methodName == "" && this.fromAccount.type && this.toAccount.type) {
+    if (this.fromAccount.type && this.toAccount.type) {
       if (
         this.fromAccount.type.includes("Owned") &&
         this.toAccount.type.includes("Owned")
       ) {
-        this.methodName = "TRANSFER";
+        this.taxCode = "TRANSFER";
       } else if (this.fromAccount.type == "Income") {
-        this.methodName = "INCOME";
+        this.taxCode = "INCOME";
       } else if (
         this.toAccount.type == "Gift" ||
         this.fromAccount.type == "Gift"
       ) {
-        this.methodName = "GIFT";
+        this.taxCode = "GIFT";
       } else if (this.toAccount.type.includes("Donation")) {
-        this.methodName = "DONATION";
+        this.taxCode = "DONATION";
       } else if (this.toAccount.type.includes("Spending")) {
-        this.methodName = "SPENDING";
+        this.taxCode = "SPENDING";
       } else if (this.toAccount.type.includes("Expense")) {
-        this.methodName = "EXPENSE";
+        this.taxCode = "EXPENSE";
       }
-    } else {
-      this.methodName = this.methodName ?? "UNKNOWN";
     }
 
     //this.timestamp = new Date(parseInt(tx.timeStamp) * 1000).toUTCString(); //new Date(parseInt(tx.timestamp));
@@ -127,6 +125,12 @@ export const columns = [
     name: "method",
     label: "Method",
     field: "methodName",
+    align: "left"
+  },
+  {
+    name: "taxCode",
+    label: "Tax Code",
+    field: "taxCode",
     align: "left"
   },
   {

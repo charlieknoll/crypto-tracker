@@ -64,12 +64,12 @@ export default {
       if (this.spendingGrouping == "Asset Totals") {
         for (const tx of txs) {
           let total = totals.find(
-            t => t.asset == tx.asset && t.action == tx.action
+            t => t.asset == tx.asset && t.taxCode == tx.taxCode
           );
           if (!total) {
             total = {
               asset: tx.asset,
-              action: tx.action,
+              taxCode: tx.taxCode,
               amount: 0.0,
               fee: 0.0,
               gross: 0.0,
@@ -84,10 +84,10 @@ export default {
         }
       } else {
         for (const tx of txs) {
-          let total = totals.find(t => t.action == tx.action);
+          let total = totals.find(t => t.taxCode == tx.taxCode);
           if (!total) {
             total = {
-              action: tx.action,
+              taxCode: tx.taxCode,
               amount: 0.0,
               fee: 0.0,
               gross: 0.0,

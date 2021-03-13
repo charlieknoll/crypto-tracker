@@ -131,12 +131,12 @@ function TokenTransaction() {
   this.initTokenTx = async function(baseCurrencies, trackedTokens) {
     //TODO Clean this up and correctly set spent and proceeds
 
-    this.action = this.parentTx.methodName;
+    this.methodName = this.parentTx.methodName;
 
     this.tracked = trackedTokens.findIndex(asset => asset == this.asset) > -1;
 
     if (!this.toAccount.type || !this.fromAccount.type) {
-      this.action = "UNKNOWN ADDR";
+      this.taxCode = "UNKNOWN ADDR";
       //return;
     }
     this.gross = 0.0;
@@ -157,11 +157,11 @@ function TokenTransaction() {
       this.parentTx.usdSpent += this.gross;
       //assign fees proportionally to non baseCurrency buys/sells
       if (this.parentTx.toAccount && this.parentTx.toAccount.type == "Income") {
-        this.action += "/INCOME";
+        this.taxCode = "INCOME";
       } else {
-        this.action = this.fromName.toLowerCase().includes("spam")
+        this.taxCode = this.fromName.toLowerCase().includes("spam")
           ? "SPAM"
-          : this.action + "/BUY";
+          : "BUY";
       }
     } else if (
       this.fromAccount.type.includes("Owned") &&
@@ -171,22 +171,22 @@ function TokenTransaction() {
       this.parentTx.usdProceeds += this.gross;
       let taxCode;
       if (!this.parentTx.toAccount) {
-        taxCode = "/SELL";
+        taxCode = "SELL";
       } else if (this.parentTx.toAccount.type == "Gift") {
-        taxCode = "/GIFT";
+        taxCode = "GIFT";
       } else if (this.parentTx.toAccount.type == "Spending") {
-        taxCode = "/SPENDING";
+        taxCode = "SPENDING";
       } else if (this.parentTx.toAccount.type == "Donation") {
-        taxCode = "/DONATION";
+        taxCode = "DONATION";
       } else if (this.parentTx.toAccount.type == "Expense") {
-        taxCode = "/EXPENSE";
+        taxCode = "EXPENSE";
       } else {
-        taxCode = "/TRANSFER";
+        taxCode = "TRANSFER";
       }
 
-      this.action += taxCode;
+      this.taxCode = taxCode;
     } else {
-      this.action = "TRANSFER";
+      this.taxCode = "TRANSFER";
       this.gross = 0.0;
       this.parentTx.otherTokenTxs.push(this);
     }
@@ -315,9 +315,15 @@ export const columns = [
     align: "left"
   },
   {
-    name: "action",
-    label: "Action",
-    field: "action",
+    name: "methodName",
+    label: "Method",
+    field: "methodName",
+    align: "left"
+  },
+  {
+    name: "taxCode",
+    label: "Tax Code",
+    field: "taxCode",
     align: "left"
   },
   {
