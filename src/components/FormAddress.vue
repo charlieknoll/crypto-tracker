@@ -29,6 +29,7 @@ export default {
         "Token",
         "Tax Deductible Donation",
         "Spending",
+        "Expense",
         "Income"
       ]
     };

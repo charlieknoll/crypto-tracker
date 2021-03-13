@@ -1,13 +1,14 @@
 <template>
-  <q-page class="" id="pageCapitalGains">
+  <q-page class="" id="pageIncome">
     <table-transactions
-      title="Capital Gains"
+      :title="'Income - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
+      @row-click="click"
     >
       <template v-slot:top-right>
         <filter-account-asset></filter-account-asset>
-        <q-btn-dropdown stretch flat :label="gainsGrouping">
+        <q-btn-dropdown stretch flat :label="incomeGrouping">
           <q-list>
             <q-item
               v-for="n in groups"
@@ -15,7 +16,7 @@
               clickable
               v-close-popup
               tabindex="0"
-              @click="gainsGrouping = n"
+              @click="incomeGrouping = n"
             >
               <q-item-label>{{ n }}</q-item-label>
             </q-item>
@@ -29,39 +30,35 @@
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { getCapitalGains, columns } from "../services/capital-gains-provider";
+import { getIncome, columns } from "../services/income-provider";
+import Vue from "Vue";
 import TableTransactions from "src/components/TableTransactions.vue";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
-import Vue from "Vue";
-
 import {
   filterByAccounts,
   filterByAssets,
   filterByYear
 } from "../services/filter-service";
+
 export default {
-  name: "PageCapitalGains",
+  components: { TableTransactions, FilterAccountAsset },
+  name: "PageIncome",
   data() {
     return {
       groups: ["Detailed", "Asset Totals", "Totals"],
-      gainsGrouping: "Totals",
-      capitalGains: Object.freeze([]),
-      columns,
+      incomeGrouping: "Totals",
+      income: Object.freeze([]),
+      columns: columns,
       $store: store,
       $actions: actions
     };
   },
-  components: {
-    FilterAccountAsset,
-    TableTransactions
-  },
   computed: {
     filtered() {
-      let txs = this.capitalGains;
+      let txs = filterByYear(this.income, this.$store.taxYear);
+      txs = filterByAccounts(txs, this.$store.selectedAccounts, true);
       txs = filterByAssets(txs, this.$store.selectedAssets);
-      txs = filterByAccounts(txs, this.$store.selectedAccounts);
-      txs = filterByYear(txs, this.$store.taxYear);
-      if (this.gainsGrouping == "Detailed") return Object.freeze(txs);
+      if (this.incomeGrouping == "Detailed") return Object.freeze(txs);
       //group by year
       const totals = [];
 
@@ -73,60 +70,51 @@ export default {
             amount: 0.0,
             fee: 0.0,
             gross: 0.0,
-            proceeds: 0.0,
-            shortTermGain: 0.0,
-            longTermGain: 0.0,
-            shortLots: 0,
-            longLots: 0
+            net: 0.0
           };
           totals.push(total);
         }
         total.amount += tx.amount;
         total.fee += tx.fee;
         total.gross += tx.gross;
-        total.proceeds += tx.proceeds;
-        total.shortTermGain += tx.shortTermGain;
-        total.longTermGain += tx.longTermGain;
-        total.shortLots += tx.shortLots;
-        total.longLots += tx.longLots;
+        total.net += tx.net;
       }
-      if (this.gainsGrouping == "Totals") {
+      if (this.incomeGrouping == "Totals") {
         const total = {
           fee: 0.0,
           gross: 0.0,
-          proceeds: 0.0,
-          shortTermGain: 0.0,
-          longTermGain: 0.0,
-          amount: ""
+          net: 0.0
         };
         for (const t of totals) {
           total.fee += t.fee;
           total.gross += t.gross;
-          total.proceeds += t.proceeds;
-          total.shortTermGain += t.shortTermGain;
-          total.longTermGain += t.longTermGain;
+          total.net += t.net;
         }
         totals.length = 0;
         totals.push(total);
       }
+
       return totals;
     }
   },
   methods: {
+    click() {
+      //TODO add method editor popup
+    },
     async load() {
-      const capitalGains = await getCapitalGains();
-      Vue.set(this, "capitalGains", Object.freeze(capitalGains));
+      const income = await getIncome();
+      Vue.set(this, "income", Object.freeze(income));
     }
   },
   async created() {
     await this.load();
-    store.onload = this.load;
+    store.onload = this.load();
   },
   destroyed() {
     store.onload = null;
   },
   mounted() {
-    window.__vue_mounted = "PageCapitalGains";
+    window.__vue_mounted = "PageIncome";
   }
 };
 </script>

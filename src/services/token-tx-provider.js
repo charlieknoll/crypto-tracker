@@ -169,10 +169,22 @@ function TokenTransaction() {
     ) {
       this.parentTx.outTokenTxs.push(this);
       this.parentTx.usdProceeds += this.gross;
-      this.action +=
-        !this.parentTx.toAccount || this.parentTx.toAccount.type == "Gift"
-          ? "/GIFT"
-          : "/SELL";
+      let taxCode;
+      if (!this.parentTx.toAccount) {
+        taxCode = "/SELL";
+      } else if (this.parentTx.toAccount.type == "Gift") {
+        taxCode = "/GIFT";
+      } else if (this.parentTx.toAccount.type == "Spending") {
+        taxCode = "/SPENDING";
+      } else if (this.parentTx.toAccount.type == "Donation") {
+        taxCode = "/DONATION";
+      } else if (this.parentTx.toAccount.type == "Expense") {
+        taxCode = "/EXPENSE";
+      } else {
+        taxCode = "/TRANSFER";
+      }
+
+      this.action += taxCode;
     } else {
       this.action = "TRANSFER";
       this.gross = 0.0;

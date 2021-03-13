@@ -39,7 +39,6 @@ export default {
       onlyShowTracked: true,
       tokenTransactions: Object.freeze([]),
       columns: columns,
-      page: 1,
       $store: store,
       $actions: actions
     };

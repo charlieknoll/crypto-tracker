@@ -44,6 +44,16 @@ const routes = [
         component: () => import("pages/PageRunningBalances.vue")
       },
       {
+        name: "Income",
+        path: "income",
+        component: () => import("pages/PageIncome.vue")
+      },
+      {
+        name: "Spending",
+        path: "spending",
+        component: () => import("pages/PageSpending.vue")
+      },
+      {
         name: "Capital Gains",
         path: "capital-gains",
         component: () => import("pages/PageCapitalGains.vue")

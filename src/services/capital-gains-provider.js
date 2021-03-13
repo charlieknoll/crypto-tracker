@@ -3,7 +3,7 @@ import { getTokenTransactions } from "./token-tx-provider";
 import { getExchangeTrades } from "./exchange-tx-provider";
 import { actions } from "../boot/actions";
 import { getPrice } from "./price-provider";
-import { formatCurrency } from "../utils/moneyUtils";
+import { formatCurrency, formatDecimalNumber } from "../utils/moneyUtils";
 async function getSellTxs(
   chainTxs,
   tokenTxs,
@@ -12,21 +12,26 @@ async function getSellTxs(
 ) {
   //TODO don't include error tx's in sellTx's
   let sellTxs = chainTxs.filter(
-    tx => tx.toAccount.type == "Spending" && !tx.isError
+    tx =>
+      (tx.toAccount.type == "Spending" || tx.toAccount.type == "Expense") &&
+      !tx.isError
   );
   sellTxs = sellTxs.map(tx => {
     const sellTx = Object.assign({}, tx);
+    const taxCode = tx.toAccount.type == "Spending" ? "SPEND: " : "EXPENSE: ";
     sellTx.account = tx.fromName;
     sellTx.amount = tx.amount + tx.fee;
     sellTx.fee = 0.0;
-    sellTx.action = "SPEND:" + (tx.action ?? tx.toAccount.name);
+    sellTx.action = taxCode + (tx.action ?? tx.toAccount.name);
     return sellTx;
   });
 
   let feeTxs = chainTxs.filter(
     tx =>
       tx.fee > 0.0 &&
-      ((tx.toAccount.type != "Spending" && tx.fromName != "GENESIS") ||
+      ((tx.toAccount.type != "Spending" &&
+        tx.toAccount.type != "Expense" &&
+        tx.fromName != "GENESIS") ||
         tx.isError)
   );
 
@@ -55,7 +60,7 @@ async function getSellTxs(
       tx.price = await getPrice(tx.transferFeeCurrency, tx.date);
       tx.gross = tx.transferFee * tx.price;
       tx.amount = tx.transferFee;
-      tx.action = "FEE";
+      tx.action = "TRANSFER FEE";
       tx.fee = 0.0;
       tx.asset = tx.transferFeeCurrency;
       _offChainFeeTxs.push(tx);
@@ -83,6 +88,7 @@ async function getSellTxs(
   sellTxs = sellTxs.map(tx => {
     tx.proceeds = tx.gross - tx.fee;
     tx.allocatedAmount = 0.0;
+    tx.feeAllocatedAmount = 0.0;
     tx.shortTermGain = 0.0;
     tx.longTermGain = 0.0;
     tx.longLots = 0;
@@ -133,6 +139,75 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
   buyTxs.sort((a, b) => a.timestamp - b.timestamp);
   return buyTxs;
 }
+function allocateProceeds(tx, buyTxs) {
+  let buyTx = buyTxs.find(
+    btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
+  );
+  //TODO adjust cost basis for fees from sale tx
+  let i = 0;
+  while (tx.allocatedAmount != tx.amount && buyTx && i < 100) {
+    const remainingAmount = tx.amount - tx.allocatedAmount;
+    const allocatedAmount =
+      remainingAmount <= buyTx.amount - buyTx.disposedAmount
+        ? remainingAmount
+        : buyTx.amount - buyTx.disposedAmount;
+    buyTx.disposedAmount += allocatedAmount;
+    tx.allocatedAmount += allocatedAmount;
+    //TODO determine long vs short
+    const daysHeld =
+      (new Date(tx.date).getTime() - new Date(buyTx.date).getTime()) /
+      1000 /
+      60 /
+      60 /
+      24;
+    const gain =
+      (allocatedAmount / tx.amount) * tx.proceeds -
+      (allocatedAmount / buyTx.amount) * buyTx.cost;
+
+    if (daysHeld > 365) {
+      tx.longTermGain += gain;
+      tx.longLots += 1;
+    } else {
+      tx.shortTermGain += gain;
+      tx.shortLots += 1;
+    }
+    i++;
+    buyTx = buyTxs.find(
+      btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
+    );
+  }
+}
+function allocateTransferFee(tx, buyTxs) {
+  let buyTx = buyTxs.find(
+    btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
+  );
+  //TODO adjust cost basis for fees from sale tx
+  let i = 0;
+
+  //reset allocated
+  tx.allocatedAmount = 0.0;
+  while (tx.allocatedAmount != tx.amount && buyTx && i < 100) {
+    const remainingAmount = tx.amount - tx.allocatedAmount;
+    const allocatedAmount =
+      remainingAmount <= buyTx.amount - buyTx.disposedAmount
+        ? remainingAmount
+        : buyTx.amount - buyTx.disposedAmount;
+
+    const allocatedProceeds = (allocatedAmount / tx.amount) * tx.proceeds;
+
+    tx.allocatedAmount += allocatedAmount;
+
+    buyTx.cost += allocatedProceeds;
+
+    i++;
+    buyTx = buyTxs.find(
+      btx =>
+        btx.asset == tx.asset &&
+        btx.disposedAmount < btx.amount &&
+        btx.txId != buyTx.txId
+    );
+  }
+}
 export const getCapitalGains = async function() {
   const chainTxs = await getChainTransactions();
   let tokenTxs = await getTokenTransactions();
@@ -150,46 +225,10 @@ export const getCapitalGains = async function() {
 
   //Calc gains for each sell
 
-  let runningGain = 0.0;
   for (const tx of sellTxs) {
-    //
-    let buyTx = buyTxs.find(
-      btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
-    );
-    //TODO adjust cost basis for fees from sale tx
-    let i = 0;
-    while (tx.allocatedAmount != tx.amount && buyTx && i < 100) {
-      const remainingAmount = tx.amount - tx.allocatedAmount;
-      const allocatedAmount =
-        remainingAmount <= buyTx.amount - buyTx.disposedAmount
-          ? remainingAmount
-          : buyTx.amount - buyTx.disposedAmount;
-      buyTx.disposedAmount += allocatedAmount;
-      tx.allocatedAmount += allocatedAmount;
-      //TODO determine long vs short
-      const daysHeld =
-        (new Date(tx.date).getTime() - new Date(buyTx.date).getTime()) /
-        1000 /
-        60 /
-        60 /
-        24;
-      const gain =
-        (allocatedAmount / tx.amount) * tx.proceeds -
-        (allocatedAmount / buyTx.amount) * buyTx.cost;
-
-      if (daysHeld > 365) {
-        tx.longTermGain += gain;
-        tx.longLots += 1;
-      } else {
-        tx.shortTermGain += gain;
-        tx.shortLots += 1;
-      }
-      i++;
-      buyTx = buyTxs.find(
-        btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
-      );
-      runningGain += gain;
-      tx.runningGain = runningGain;
+    allocateProceeds(tx, buyTxs);
+    if (tx.action == "TRANSFER FEE") {
+      allocateTransferFee(tx, buyTxs);
     }
   }
   return sellTxs;
@@ -230,7 +269,7 @@ export const columns = [
     label: "Amount",
     field: "amount",
     align: "right",
-    format: (val, row) => `${(parseFloat(val) ?? 0.0).toFixed(4)}`
+    format: (val, row) => formatDecimalNumber(val, 4)
   },
   {
     name: "fee",
@@ -278,12 +317,6 @@ export const columns = [
     name: "shortLots",
     label: "S Lots",
     field: "shortLots",
-    align: "right"
-  },
-  {
-    name: "unitsRemaining",
-    label: "Units Remaining",
-    field: "unitsRemaining",
     align: "right"
   }
 ];

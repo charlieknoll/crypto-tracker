@@ -4,12 +4,11 @@ import { actions } from "../boot/actions";
 const BigNumber = ethers.BigNumber;
 import getMethodName from "./methods";
 import { LocalStorage } from "quasar";
-import { weiToMoney, bnToFloat } from "src/utils/moneyUtils";
+import { weiToMoney, bnToFloat, formatCurrency } from "src/utils/moneyUtils";
 
 export const ChainTransaction = function() {
   this.init = async function(tx) {
     this.toAccount = actions.addImportedAddress({ address: tx.to });
-    this.type = this.toAccount.type;
     this.fromAccount = actions.addImportedAddress({ address: tx.from });
     this.hash = tx.hash.toLowerCase();
     this.txId = tx.hash.substring(0, 8);
@@ -27,7 +26,29 @@ export const ChainTransaction = function() {
     //this.amount = ethers.utils.formatEther(BigNumber.from(tx.value));
     this.methodName = getMethodName(tx.input);
     //TODO handle income and spending if necessary
-    if (this.methodName == "") this.methodName = "TRANSFER";
+    if (this.methodName == "" && this.fromAccount.type && this.toAccount.type) {
+      if (
+        this.fromAccount.type.includes("Owned") &&
+        this.toAccount.type.includes("Owned")
+      ) {
+        this.methodName = "TRANSFER";
+      } else if (this.fromAccount.type == "Income") {
+        this.methodName = "INCOME";
+      } else if (
+        this.toAccount.type == "Gift" ||
+        this.fromAccount.type == "Gift"
+      ) {
+        this.methodName = "GIFT";
+      } else if (this.toAccount.type.includes("Donation")) {
+        this.methodName = "DONATION";
+      } else if (this.toAccount.type.includes("Spending")) {
+        this.methodName = "SPENDING";
+      } else if (this.toAccount.type.includes("Expense")) {
+        this.methodName = "EXPENSE";
+      }
+    } else {
+      this.methodName = this.methodName ?? "UNKNOWN";
+    }
 
     //this.timestamp = new Date(parseInt(tx.timeStamp) * 1000).toUTCString(); //new Date(parseInt(tx.timestamp));
     this.timestamp = parseInt(tx.timeStamp);
@@ -109,12 +130,6 @@ export const columns = [
     align: "left"
   },
   {
-    name: "type",
-    label: "Type",
-    field: "type",
-    align: "left"
-  },
-  {
     name: "amount",
     label: "Amount",
     field: "amount",
@@ -126,21 +141,21 @@ export const columns = [
     label: "ETH Price",
     field: "price",
     align: "right",
-    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
+    format: (val, row) => formatCurrency(val)
   },
   {
     name: "fee",
     label: "Fee",
     field: "fee",
     align: "right",
-    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
+    format: (val, row) => formatCurrency(val)
   },
   {
     name: "gross",
     label: "Gross",
     field: "gross",
     align: "right",
-    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
+    format: (val, row) => formatCurrency(val)
   },
   {
     name: "error",

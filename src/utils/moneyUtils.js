@@ -21,10 +21,19 @@ export const bnToFloat = function(bn, decimals) {
   }
 };
 export const formatCurrency = function(val) {
+  if (val === undefined || val === null || val === "") {
+    return val;
+  }
+  val = parseFloat(val);
   const formatted = `$${(val ?? 0.0).toLocaleString("en-US", {
     style: "decimal",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })}`;
   return formatted;
+};
+export const formatDecimalNumber = function(val, digits) {
+  if (val == undefined || val == null || val == "") return "";
+  val = parseFloat(val);
+  return `${(val ?? 0.0).toFixed(digits)}`;
 };
