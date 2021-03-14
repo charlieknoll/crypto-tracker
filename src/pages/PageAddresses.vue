@@ -35,13 +35,6 @@
     >
       <template v-slot:top-right>
         <q-btn
-          color="primary"
-          icon-right="archive"
-          label="Export to csv"
-          no-caps
-          @click="exportTable"
-        />
-        <q-btn
           class="q-ml-lg"
           color="negative"
           label="Clear Unnamed"
@@ -56,8 +49,6 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import FormAddress from "src/components/FormAddress.vue";
-import { convertToCsv } from "src/utils/arrayUtil";
-import { exportFile } from "quasar";
 export default {
   name: "PageAddresses",
   data() {
@@ -123,38 +114,15 @@ export default {
           this.$refs.addressDlg.hide();
         });
     },
-    exportTable() {
-      const simpleAddress = this.$store.addresses.map(a => {
-        return { address: a.address, name: a.name, type: a.type };
-      });
-      const names = ["address", "name", "type"];
-      const content = convertToCsv(simpleAddress, names);
-      const status = exportFile("addresses.csv", content, "text/csv");
-      if (status !== true) {
-        this.$q.notify({
-          message: "Browser denied file download...",
-          color: "negative",
-          icon: "warning"
-        });
-      }
 
-      const prices = actions.getData("prices") ?? [];
-      const pNames = ["tradeDate", "symbol", "price"];
-      const pContent = convertToCsv(prices, pNames);
-      const pStatus = exportFile("prices.csv", pContent, "text/csv");
-      if (pStatus !== true) {
-        this.$q.notify({
-          message: "Browser denied file download...",
-          color: "negative",
-          icon: "warning"
-        });
-      }
-    },
     clearUnnamed() {
       const namedAddresses = this.$store.addresses.filter(
         a => a.name.substring(0, 2) != "0x"
       );
       this.addresses = namedAddresses;
+    },
+    load() {
+      this.addresses = store.addresses;
     }
   },
   watch: {
@@ -189,10 +157,18 @@ export default {
       handler: function(val) {
         actions.setObservableData("addresses", val);
         this.$store.updated = true;
+        actions.setObservableData("addressesNeedsBackup", true);
         // this.$actions.markUpdated();
       },
       deep: true
     }
+  },
+  async created() {
+    await this.load();
+    store.onload = this.load;
+  },
+  destroyed() {
+    store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageAddresses";

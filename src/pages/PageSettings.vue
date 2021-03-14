@@ -1,5 +1,6 @@
 <template>
   <q-page class="constrain q-pa-md" id="pageSettings">
+    <div class="q-table__title">Settings</div>
     <q-form class="q-gutter-md q-pa-lg">
       <q-input
         filled
@@ -47,24 +48,44 @@ export default {
       $actions: actions
     };
   },
+  methods: {
+    load() {
+      this.apikey = this.$store.apikey;
+      this.trackedTokens = this.$store.trackedTokens;
+      this.trackSpentTokens = this.$store.trackSpentTokens;
+      this.baseCurrencies = this.$store.baseCurrencies;
+    }
+  },
   watch: {
     apikey: function(val) {
       actions.setObservableData("apikey", val);
+      this.$store.settingsNeedsBackup = true;
     },
     autoImport: function(val) {
       actions.setObservableData("autoImport", val);
+      this.$store.settingsNeedsBackup = true;
     },
     baseCurrencies: function(val) {
       if (!val) val = "";
       actions.setObservableData("baseCurrencies", val);
+      this.$store.settingsNeedsBackup = true;
     },
     trackedTokens: function(val) {
       if (!val) val = "";
       actions.setObservableData("trackedTokens", val);
+      this.$store.settingsNeedsBackup = true;
     },
     trackSpentTokens: function(val) {
       actions.setObservableData("trackSpentTokens", val);
+      this.$store.settingsNeedsBackup = true;
     }
+  },
+  async created() {
+    await this.load();
+    store.onload = this.load;
+  },
+  destroyed() {
+    store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageSettings";

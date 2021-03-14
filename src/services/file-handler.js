@@ -44,6 +44,18 @@ function processPricesFile(content) {
   actions.setObservableData("prices", pricingData);
   return pricingData.length;
 }
+function processSettingsFile(content) {
+  const settings = JSON.parse(content);
+  store.apikey = settings.apikey;
+  store.startYear = settings.startYear;
+  store.baseCurrencies = settings.baseCurrencies;
+  store.trackedTokens = settings.trackedTokens;
+  store.trackSpentTokens = settings.trackSpentTokens;
+  store.cbpApikeye = settings.cbpApikey;
+  store.cbpSecret = settings.cbpSecret;
+  store.cbpPassphrase = settings.cbpPassphrase;
+  return 1;
+}
 export const processFile = function(name, content) {
   store.updated = true;
   //TODO route file to proper processor
@@ -61,6 +73,9 @@ export const processFile = function(name, content) {
   }
   if (name.substring(0, 6) == "prices") {
     return processPricesFile(content);
+  }
+  if (name.substring(0, 8) == "settings") {
+    return processSettingsFile(content);
   }
   //return message
 };

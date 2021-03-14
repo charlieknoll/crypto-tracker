@@ -13,6 +13,13 @@ taxYears.push("All");
 
 const _store = Vue.observable({
   apikey: LocalStorage.getItem("apikey") ?? process.env.ETHERSCAN_API_KEY,
+  cbpApikey:
+    LocalStorage.getItem("cbpApikey") ?? process.env.COINBASE_PRO_API_KEY,
+  cbpSecret:
+    LocalStorage.getItem("cbpSecret") ?? process.env.COINBASE_PRO_API_SECRET,
+  cbpPassphrase:
+    LocalStorage.getItem("cbpPassphrase") ??
+    process.env.COINBASE_PRO_PASSPHRASE,
   assets: [],
   selectedAssets: [],
   selectedAccounts: [],
@@ -20,6 +27,9 @@ const _store = Vue.observable({
   startYear,
   taxYears,
   importing: false,
+  pricesNeedsBackup: LocalStorage.getItem("pricesNeedsBackup") ?? false,
+  addressesNeedsBackup: LocalStorage.getItem("addressesNeedsBackup") ?? false,
+  settingsNeedsBackup: LocalStorage.getItem("settingsNeedsBackup") ?? false,
   baseCurrencies: LocalStorage.getItem("baseCurrencies") ?? "",
   trackedTokens: LocalStorage.getItem("trackedTokens") ?? "",
   trackSpentTokens: LocalStorage.getItem("trackSpentTokens") ?? true,

@@ -1,5 +1,6 @@
 <template>
   <q-page class="constrain q-pa-md" id="pageImport">
+    <div class="q-table__title">Import</div>
     <q-form class="q-gutter-md q-pa-lg">
       <p>
         Please see the <router-link to="help">help</router-link> page for
@@ -14,10 +15,6 @@
       <q-btn label="Import Transactions" @click="importTransactions"></q-btn>
       <q-btn label="Clear Transactions" @click="clearTransactions"></q-btn>
       <q-btn label="Clear Price History" @click="clearPriceHistory"></q-btn>
-      <q-btn
-        label="Download Price History"
-        @click="downloadPriceHistory"
-      ></q-btn>
       <br />
       <p>Current block: {{ currentBlock }}</p>
 
@@ -88,9 +85,6 @@ export default {
         }
       }
       this.$actions.setObservableData("addresses", cleansedAddresses);
-    },
-    downloadPriceHistory() {
-      //TODO
     }
   },
 

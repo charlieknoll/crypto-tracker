@@ -56,6 +56,7 @@ export const getPrice = async function(symbol, tradeDate) {
           price
         });
         actions.setData("prices", prices);
+        actions.setObservableData("pricesNeedsBackup", true);
         return price;
       } catch (error) {
         await throttle(new Date().getTime(), 10000);

@@ -54,7 +54,14 @@
             v-ripple
           >
             <q-item-section avatar>
-              <q-icon :class="menuItem.class" :name="menuItem.icon" />
+              <q-icon
+                :style="
+                  menuItem.icon == 'mdi-alert' && needsBackup
+                    ? 'color: red;'
+                    : ''
+                "
+                :name="menuItem.icon"
+              />
             </q-item-section>
             <q-item-section>
               {{ menuItem.label }}
@@ -167,6 +174,12 @@ const menuList = [
     to: "/settings"
   },
   {
+    icon: "mdi-alert",
+    label: "Backup",
+    separator: true,
+    to: "/backup"
+  },
+  {
     icon: "help",
     iconColor: "primary",
     label: "Help",
@@ -192,6 +205,15 @@ export default {
       taxYears: store.taxYears,
       $store: store
     };
+  },
+  computed: {
+    needsBackup() {
+      return (
+        this.$store.pricesNeedsBackup ||
+        this.$store.addressesNeedsBackup ||
+        this.$store.settingsNeedsBackup
+      );
+    }
   },
 
   watch: {
