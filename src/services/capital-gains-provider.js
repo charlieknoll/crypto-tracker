@@ -18,7 +18,7 @@ async function getSellTxs(
     sellTx.account = tx.fromName;
     sellTx.amount = tx.amount + tx.fee;
     sellTx.fee = 0.0;
-    tx.action = tx.methodName;
+    sellTx.action = tx.taxCode;
     return sellTx;
   });
 
@@ -40,13 +40,17 @@ async function getSellTxs(
     feeTx.gross = tx.fee;
     feeTx.action = tx.isError
       ? "ERROR FEE"
-      : tx.taxCode == "TRANSFER" && tx.toAccount.type != "Token"
+      : tx.taxCode == "TRANSFER"
       ? "TRANSFER FEE"
-      : tx.taxCode == "TRANSFER" && tx.toAccount.type == "Token"
-      ? "TF:" + toAccount.name
       : tx.toAccount.type == "Token"
       ? "TOKEN FEE"
       : "FEE";
+    if (feeTx.action == "TRANSFER FEE") {
+      const tokenTx = tokenTxs.find(tt => tt.hash == feeTx.hash);
+      if (tokenTx) {
+        feeTx.action = "TF:" + tokenTx.asset;
+      }
+    }
     feeTx.account = tx.fromName;
     return feeTx;
   });
@@ -256,6 +260,10 @@ export const getCapitalGains = async function() {
     }
     //Only increase cost basis for tx's that did not transfer tokens (approve), token transfers, buys and
     //sells will be applied to the token cost basis
+    if (tx.action && tx.action.includes("TF:")) {
+      tx.asset = tx.action.split(":")[1];
+      allocateTransferFee(tx, buyTxs);
+    }
     if (
       tx.action == "TOKEN FEE" &&
       tokenTxs.findIndex(tt => tt.parentTx.hash == tx.hash) == -1
