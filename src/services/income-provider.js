@@ -8,9 +8,8 @@ export const getIncome = async function() {
   const tokenTransactions = await getTokenTransactions();
   mappedData = mappedData.concat(
     chainTransactions
-      .filter(tx => tx.methodName == "INCOME" && tx.gross != 0.0)
+      .filter(tx => tx.taxCode == "INCOME" && tx.gross != 0.0)
       .map(tx => {
-        tx.action = tx.methodName;
         tx.account = tx.toAccount.type.includes("Owned")
           ? tx.fromName
           : tx.toName;
@@ -22,7 +21,7 @@ export const getIncome = async function() {
   );
   mappedData = mappedData.concat(
     tokenTransactions
-      .filter(tx => tx.action.includes("INCOME") && tx.tracked)
+      .filter(tx => tx.taxCode == "INCOME" && tx.tracked)
       .map(tx => {
         tx.amount = tx.decimalAmount;
         tx.account = tx.toAccount.type.includes("Owned")
@@ -65,9 +64,16 @@ export const columns = [
     align: "left"
   },
   {
-    name: "action",
-    label: "Action",
-    field: "action",
+    name: "methodName",
+    label: "Method Name",
+    field: "methodName",
+    align: "left"
+  },
+
+  {
+    name: "taxCode",
+    label: "Tax Code",
+    field: "taxCode",
     align: "left"
   },
   {

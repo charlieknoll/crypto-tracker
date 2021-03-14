@@ -10,27 +10,23 @@ async function getSellTxs(
   exchangeTrades,
   offchainTransfers
 ) {
-  //TODO don't include error tx's in sellTx's
   let sellTxs = chainTxs.filter(
-    tx =>
-      (tx.toAccount.type == "Spending" || tx.toAccount.type == "Expense") &&
-      !tx.isError
+    tx => (tx.taxCode == "SPENDING" || tx.taxCode == "EXPENSE") && !tx.isError
   );
   sellTxs = sellTxs.map(tx => {
     const sellTx = Object.assign({}, tx);
-    const taxCode = tx.toAccount.type == "Spending" ? "SPEND: " : "EXPENSE: ";
     sellTx.account = tx.fromName;
     sellTx.amount = tx.amount + tx.fee;
     sellTx.fee = 0.0;
-    sellTx.action = taxCode + (tx.action ?? tx.toAccount.name);
+    tx.action = tx.methodName;
     return sellTx;
   });
 
   let feeTxs = chainTxs.filter(
     tx =>
       tx.fee > 0.0 &&
-      ((tx.toAccount.type != "Spending" &&
-        tx.toAccount.type != "Expense" &&
+      ((tx.taxCode != "SPENDING" &&
+        tx.taxCode != "EXPENSE" &&
         tx.fromName != "GENESIS") ||
         tx.isError)
   );
@@ -44,7 +40,7 @@ async function getSellTxs(
     feeTx.gross = tx.fee;
     feeTx.action = tx.isError
       ? "ERROR FEE"
-      : tx.methodName == "TRANSFER"
+      : tx.taxCode == "TRANSFER"
       ? "TRANSFER FEE"
       : tx.toAccount.type == "Token"
       ? "TOKEN FEE"
@@ -68,21 +64,20 @@ async function getSellTxs(
   }
 
   let _sellTokenTxs = tokenTxs.filter(
-    tx => tx.action.includes("SELL") && tx.displayAmount != 0.0
+    tx => tx.taxCode == "SELL" && tx.displayAmount != 0.0
   );
   _sellTokenTxs = _sellTokenTxs.map(tx => {
     const sellTx = Object.assign({}, tx);
     sellTx.account = tx.fromAccount.name;
     sellTx.amount = tx.displayAmount;
+    sellTx.action = tx.taxCode;
     return sellTx;
   });
 
   sellTxs = sellTxs.concat(feeTxs);
   sellTxs = sellTxs.concat(_offChainFeeTxs);
   sellTxs = sellTxs.concat(_sellTokenTxs);
-  sellTxs = sellTxs.concat(
-    exchangeTrades.filter(tx => tx.action.includes("SELL"))
-  );
+  sellTxs = sellTxs.concat(exchangeTrades.filter(tx => tx.action == "SELL"));
   //TODO add transfer fees to sell txs
 
   sellTxs = sellTxs.map(tx => {
@@ -100,22 +95,18 @@ async function getSellTxs(
 }
 function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
   //Create BUY txs
-  let buyTxs = chainTxs.filter(
-    tx => tx.fromAccount.type == "Income" && tx.amount > 0.0
-  );
+  let buyTxs = chainTxs.filter(tx => tx.taxCode == "INCOME" && tx.amount > 0.0);
   buyTxs = buyTxs.map(tx => {
     const buyTx = Object.assign({}, tx);
     buyTx.account = tx.fromName;
     buyTx.amount = tx.amount + tx.fee;
     buyTx.fee = 0.0;
-    buyTx.action = "INCOME:" + (tx.action ?? tx.fromName);
     return buyTx;
   });
 
   let _buyTokenTxs = tokenTxs.filter(
     tx =>
-      (tx.action.includes("BUY") || tx.action.includes("INCOME")) &&
-      tx.displayAmount != 0.0
+      (tx.taxCode == "BUY" || tx.taxCode == "INCOME") && tx.displayAmount != 0.0
   );
   _buyTokenTxs = _buyTokenTxs.map(tx => {
     const buyTx = Object.assign({}, tx);
@@ -124,9 +115,7 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
     return buyTx;
   });
   buyTxs = buyTxs.concat(_buyTokenTxs);
-  let _buyExchangeTrades = exchangeTrades.filter(tx =>
-    tx.action.includes("BUY")
-  );
+  let _buyExchangeTrades = exchangeTrades.filter(tx => tx.action == "BUY");
   buyTxs = buyTxs.concat(_buyExchangeTrades);
 
   buyTxs = buyTxs.concat(openingPositions);
@@ -227,6 +216,7 @@ export const getCapitalGains = async function() {
 
   for (const tx of sellTxs) {
     allocateProceeds(tx, buyTxs);
+    //IMPORTANT, TRANSFER FEES timestamp adjusted -1 so the fees get applied first
     if (tx.action == "TRANSFER FEE") {
       allocateTransferFee(tx, buyTxs);
     }

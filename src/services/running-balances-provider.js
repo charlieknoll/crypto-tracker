@@ -95,7 +95,7 @@ export const getRunningBalances = async function() {
         price: tx.price,
         type: "Token-in",
         hash: tx.hash,
-        action: tx.action
+        action: tx.methodName
       });
     }
     if (tx.fromAccount.type.toLowerCase().includes("owned")) {
@@ -110,7 +110,7 @@ export const getRunningBalances = async function() {
         price: tx.price,
         type: "Token-out",
         hash: tx.hash,
-        action: tx.action
+        action: tx.methodName
       });
     }
   }
