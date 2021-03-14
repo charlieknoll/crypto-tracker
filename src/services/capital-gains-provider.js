@@ -40,8 +40,10 @@ async function getSellTxs(
     feeTx.gross = tx.fee;
     feeTx.action = tx.isError
       ? "ERROR FEE"
-      : tx.taxCode == "TRANSFER"
+      : tx.taxCode == "TRANSFER" && tx.toAccount.type != "Token"
       ? "TRANSFER FEE"
+      : tx.taxCode == "TRANSFER" && tx.toAccount.type == "Token"
+      ? "TF:" + toAccount.name
       : tx.toAccount.type == "Token"
       ? "TOKEN FEE"
       : "FEE";
@@ -197,6 +199,38 @@ function allocateTransferFee(tx, buyTxs) {
     );
   }
 }
+
+function allocateTokenFee(tx, buyTxs) {
+  let buyTx = buyTxs.find(
+    btx => btx.asset == tx.toAccount.name && btx.disposedAmount < btx.amount
+  );
+  //TODO adjust cost basis for fees from sale tx
+  let i = 0;
+
+  //reset allocated
+  tx.allocatedAmount = 0.0;
+  while (tx.allocatedAmount != tx.amount && buyTx && i < 100) {
+    const remainingAmount = tx.amount - tx.allocatedAmount;
+    const allocatedAmount =
+      remainingAmount <= buyTx.amount - buyTx.disposedAmount
+        ? remainingAmount
+        : buyTx.amount - buyTx.disposedAmount;
+
+    const allocatedProceeds = (allocatedAmount / tx.amount) * tx.proceeds;
+
+    tx.allocatedAmount += allocatedAmount;
+
+    buyTx.cost += allocatedProceeds;
+
+    i++;
+    buyTx = buyTxs.find(
+      btx =>
+        btx.asset == tx.toAccount.name &&
+        btx.disposedAmount < btx.amount &&
+        btx.txId != buyTx.txId
+    );
+  }
+}
 export const getCapitalGains = async function() {
   const chainTxs = await getChainTransactions();
   let tokenTxs = await getTokenTransactions();
@@ -219,6 +253,14 @@ export const getCapitalGains = async function() {
     //IMPORTANT, TRANSFER FEES timestamp adjusted -1 so the fees get applied first
     if (tx.action == "TRANSFER FEE") {
       allocateTransferFee(tx, buyTxs);
+    }
+    //Only increase cost basis for tx's that did not transfer tokens (approve), token transfers, buys and
+    //sells will be applied to the token cost basis
+    if (
+      tx.action == "TOKEN FEE" &&
+      tokenTxs.findIndex(tt => tt.parentTx.hash == tx.hash) == -1
+    ) {
+      allocateTokenFee(tx, buyTxs);
     }
   }
   return sellTxs;

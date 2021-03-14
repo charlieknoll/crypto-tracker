@@ -44,7 +44,7 @@ export default {
   data() {
     return {
       groups: ["Detailed", "Asset Totals", "Totals"],
-      gainsGrouping: "Totals",
+      gainsGrouping: "Detailed",
       capitalGains: Object.freeze([]),
       columns,
       $store: store,
