@@ -261,8 +261,9 @@ export const getCapitalGains = async function() {
     //Only increase cost basis for tx's that did not transfer tokens (approve), token transfers, buys and
     //sells will be applied to the token cost basis
     if (tx.action && tx.action.includes("TF:")) {
-      tx.asset = tx.action.split(":")[1];
-      allocateTransferFee(tx, buyTxs);
+      const _tx = Object.assign({}, tx);
+      _tx.asset = tx.action.split(":")[1];
+      allocateTransferFee(_tx, buyTxs);
     }
     if (
       tx.action == "TOKEN FEE" &&
