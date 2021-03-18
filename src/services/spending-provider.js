@@ -17,7 +17,8 @@ export const getSpending = async function() {
     chainTransactions
       .filter(
         tx =>
-          spendingCodes.findIndex(s => s == tx.taxCode) > -1 && tx.gross != 0.0
+          spendingCodes.findIndex(s => s == tx.taxCode) > -1 &&
+          (tx.gross != 0.0 || tx.fee != 0.0)
       )
       .map(tx => {
         tx.account = tx.toAccount.type.includes("Owned")
