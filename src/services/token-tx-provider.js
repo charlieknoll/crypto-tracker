@@ -242,8 +242,12 @@ export const getTokenTransactions = async function() {
   //start with tx's and insert any token txs
   const mappedTxs = [];
   const parentTxs = await getChainTransactions();
-  const baseCurrencies = store.baseCurrencies.replaceAll(" ", "").split(",");
-  let trackedTokens = store.trackedTokens.replaceAll(" ", "").split(",");
+  const baseCurrencies = store.settings.baseCurrencies
+    .replaceAll(" ", "")
+    .split(",");
+  let trackedTokens = store.settings.trackedTokens
+    .replaceAll(" ", "")
+    .split(",");
   if (trackedTokens.length == 1 && trackedTokens[0] == "") {
     trackedTokens.pop();
   }
@@ -256,7 +260,7 @@ export const getTokenTransactions = async function() {
     await tokenTx.init(t);
     await tokenTx.initParentTransaction(parentTxs);
     if (
-      store.trackSpentTokens &&
+      store.settings.trackSpentTokens &&
       tokenTx.fromAccount.type &&
       tokenTx.fromAccount.type.toLowerCase().includes("owned") &&
       tokenTx.asset != "ETH" &&

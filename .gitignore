@@ -40,3 +40,4 @@ src/data/coinbase/
 src/data/exchangetxs.json
 src/services/addresses.js
 src/data/
+src/services/test.js

@@ -46,14 +46,8 @@ function processPricesFile(content) {
 }
 function processSettingsFile(content) {
   const settings = JSON.parse(content);
-  store.apikey = settings.apikey;
-  store.startYear = settings.startYear;
-  store.baseCurrencies = settings.baseCurrencies;
-  store.trackedTokens = settings.trackedTokens;
-  store.trackSpentTokens = settings.trackSpentTokens;
-  store.cbpApikeye = settings.cbpApikey;
-  store.cbpSecret = settings.cbpSecret;
-  store.cbpPassphrase = settings.cbpPassphrase;
+  store.settings = settings;
+  actions.setObservableData("settings", settings);
   return 1;
 }
 export const processFile = function(name, content) {

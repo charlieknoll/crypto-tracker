@@ -4,7 +4,13 @@
     <q-form class="q-gutter-md q-pa-lg">
       <q-input
         filled
-        v-model="apikey"
+        v-model="settings.startYear"
+        label="Start Year"
+        hint="Not including opening positions"
+      />
+      <q-input
+        filled
+        v-model="settings.apikey"
         label="Etherscan API KEY"
         hint="Go to etherscan.io and create a key"
         lazy-rules
@@ -12,20 +18,27 @@
       />
       <q-input
         filled
-        v-model="baseCurrencies"
+        v-model="settings.baseCurrencies"
         label="Base Currencies"
         hint="Comma delimited list (e.g. USDT, TUSD, USDC, DAI)"
       />
       <q-input
         filled
-        v-model="trackedTokens"
+        v-model="settings.trackedTokens"
         label="Additional Tracked Tokens (Non Spent)"
         hint="Comma delimited list (e.g. OMG, KICK, etc)"
       />
       <q-checkbox
         left-label
-        v-model="trackSpentTokens"
+        v-model="settings.trackSpentTokens"
         label="Track Spent Tokens"
+      />
+      <q-input filled v-model="settings.cbpApikey" label="Coinbase API Key" />
+      <q-input filled v-model="settings.cbpSecret" label="Coinbase Secret" />
+      <q-input
+        filled
+        v-model="settings.cbpPassphrase"
+        label="Coinbase Passphrase"
       />
     </q-form>
   </q-page>
@@ -38,46 +51,21 @@ export default {
   name: "PageSettings",
   data() {
     return {
-      apikey: store.apikey,
-      autoImport: store.autoImport,
-      trackedTokens: store.trackedTokens,
-      trackSpentTokens: store.trackSpentTokens,
-      baseCurrencies: store.baseCurrencies,
-
-      $store: store,
-      $actions: actions
+      settings: store.settings
     };
   },
   methods: {
     load() {
-      this.apikey = this.$store.apikey;
-      this.trackedTokens = this.$store.trackedTokens;
-      this.trackSpentTokens = this.$store.trackSpentTokens;
-      this.baseCurrencies = this.$store.baseCurrencies;
+      this.settings = this.$store.settings;
     }
   },
   watch: {
-    apikey: function(val) {
-      actions.setObservableData("apikey", val);
-      this.$store.settingsNeedsBackup = true;
-    },
-    autoImport: function(val) {
-      actions.setObservableData("autoImport", val);
-      this.$store.settingsNeedsBackup = true;
-    },
-    baseCurrencies: function(val) {
-      if (!val) val = "";
-      actions.setObservableData("baseCurrencies", val);
-      this.$store.settingsNeedsBackup = true;
-    },
-    trackedTokens: function(val) {
-      if (!val) val = "";
-      actions.setObservableData("trackedTokens", val);
-      this.$store.settingsNeedsBackup = true;
-    },
-    trackSpentTokens: function(val) {
-      actions.setObservableData("trackSpentTokens", val);
-      this.$store.settingsNeedsBackup = true;
+    settings: {
+      handler: function(val) {
+        actions.setObservableData("settings", val);
+        actions.setObservableData("settingsNeedsBackup", true);
+      },
+      deep: true
     }
   },
   async created() {

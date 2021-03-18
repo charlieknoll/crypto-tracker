@@ -7,7 +7,7 @@ let lastRequestTime = 0;
 async function getTokenTransactions(oa) {
   const tokenTxApiUrl =
     "https://api.etherscan.io/api?module=account&action=tokentx&address=" +
-    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.apikey}`;
+    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.settings.apikey}`;
 
   const result = await axios.get(tokenTxApiUrl);
   if (
@@ -27,7 +27,7 @@ async function getTokenTransactions(oa) {
 async function getAccountTransactions(oa) {
   const normalTxApiUrl =
     "https://api.etherscan.io/api?module=account&action=txlist&address=" +
-    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.apikey}`;
+    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.settings.apikey}`;
 
   const result = await axios.get(normalTxApiUrl);
   if (
@@ -53,7 +53,7 @@ async function getAccountTransactions(oa) {
 async function getAccountInternalTransactions(oa) {
   const internalTxApiUrl =
     "https://api.etherscan.io/api?module=account&action=txlistinternal&address=" +
-    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.apikey}`;
+    `${oa.address}&startblock=${oa.lastBlockSync}&endblock=99999999&sort=asc&apikey=${store.settings.apikey}`;
 
   const result = await axios.get(internalTxApiUrl);
   if (
@@ -107,7 +107,7 @@ export const getTransactions = async function() {
 };
 export const getCurrentBlock = async function() {
   const timestamp = Math.round(new Date().getTime() / 1000);
-  const apikey = store.apikey;
+  const apikey = store.settings.apikey;
 
   const apiUrl = `https://api.etherscan.io/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`;
   try {

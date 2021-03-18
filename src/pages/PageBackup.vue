@@ -73,16 +73,7 @@ export default {
     },
 
     downloadSettings() {
-      const settings = {
-        apikey: store.apikey,
-        startYear: store.startYear,
-        baseCurrencies: store.baseCurrencies,
-        trackedTokens: store.trackedTokens,
-        trackSpentTokens: store.trackSpentTokens,
-        cbpApikey: store.cbpApikey,
-        cbpSecret: store.cbpSecret,
-        cbpPassphrase: store.cbpPassphrase
-      };
+      const settings = store.settings;
       const pContent = JSON.stringify(settings);
       const pStatus = exportFile("settings.json", pContent, "text/csv");
       if (pStatus !== true) {

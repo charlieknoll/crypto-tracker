@@ -8,7 +8,7 @@ import { _ } from "core-js";
 export const actions = {
   store: store,
   setObservableData: function(key, val) {
-    if (val === "null" || val === null) return;
+    if (val === "null" || val === null || val === undefined) return;
     //store[key] = val;
     Vue.set(store, key, val);
     LocalStorage.set(key, val);
