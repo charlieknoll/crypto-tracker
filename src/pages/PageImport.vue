@@ -12,6 +12,14 @@
         filled
         multiple
       />
+      <q-btn
+        label="Import ETH Transactions"
+        @click="importTransactions"
+      ></q-btn>
+      <q-btn
+        label="Import Coinbase Pro Transactions"
+        @click="importCbpTransactions"
+      ></q-btn>
       <q-btn label="Import Transactions" @click="importTransactions"></q-btn>
       <q-btn label="Clear Transactions" @click="clearTransactions"></q-btn>
       <q-btn label="Clear Price History" @click="clearPriceHistory"></q-btn>
@@ -40,6 +48,7 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { processFiles } from "../services/file-handler";
+import { importCbpTrades } from "../services/coinbase-provider";
 import {
   getCurrentBlock,
   getTransactions
@@ -61,6 +70,15 @@ export default {
       try {
         this.$store.importing = true;
         await getTransactions();
+      } finally {
+        this.$store.importing = false;
+      }
+    },
+    async importCbpTransactions() {
+      //call etherscan import service
+      try {
+        this.$store.importing = true;
+        await importCbpTrades();
       } finally {
         this.$store.importing = false;
       }

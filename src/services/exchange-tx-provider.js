@@ -129,7 +129,10 @@ export const getExchangeTrades = async function() {
     asset.amount += et.action == "BUY" ? et.amount : -et.amount;
     et.runningBalance = asset.amount;
   }
-  return mappedData;
+  return mappedData.sort((a, b) => {
+    if (a.timestamp != b.timestamp) return a - b;
+    return a.txId < b.txId ? 1 : -1;
+  });
 };
 
 export const columns = [
