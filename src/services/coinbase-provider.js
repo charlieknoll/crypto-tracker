@@ -43,7 +43,72 @@ function mapFills(fills, account) {
     return tx;
   });
 }
-export const importCbpTrades = async function() {
+
+async function processAccount(
+  authedClient,
+  account,
+  productIds,
+  accountHistory,
+  trades,
+  fullDownload
+) {
+  let accountBefore;
+  let after = 1;
+  while (after > 0) {
+    let args = {};
+    if (after != 1) {
+      args.after = after;
+    } else {
+      //first time through set before and reset account after
+      accountBefore = accountHistory.find(ah => ah.accountId == account.id);
+      if (accountBefore && accountBefore.before && !fullDownload) {
+        args.before = accountBefore.before;
+      }
+      if (!accountBefore) {
+        accountBefore = { accountId: account.id, before: null };
+        accountHistory.push(accountBefore);
+      }
+    }
+    lastRequestTime = await throttle(lastRequestTime, 200);
+    const _history = await authedClient.getAccountHistory(account.id, args);
+
+    //Only set the first time
+    if (authedClient.before && after == 1) {
+      accountBefore.before = authedClient.before;
+    }
+    for (const h of _history.filter(h => h.type == "match")) {
+      //TODO set after for first record found
+      if (productIds.findIndex(p => p.id == h.details.product_id) == -1) {
+        productIds.push({
+          id: h.details.product_id,
+          after: null
+        });
+      }
+    }
+    trades.push(...mapConversions(_history, account));
+    after = authedClient.after ?? 0;
+  }
+}
+async function processProductId(authedClient, productId, trades, fullDownload) {
+  let after = 1;
+  while (after > 0) {
+    let args = { product_id: productId.id };
+    if (after != 1) {
+      args.after = after;
+    } else if (productId.after && !fullDownload) {
+      args.after = productId.after;
+    }
+    lastRequestTime = await throttle(lastRequestTime, 200);
+    const _fills = await authedClient.getFills(args);
+    trades.push(...mapFills(_fills));
+    if (authedClient.after) {
+      productId.after = authedClient.after;
+    }
+    after = authedClient.after ?? 0;
+  }
+}
+
+export const importCbpTrades = async function(fullDownload) {
   const apikey = store.settings.cbpApikey;
   const passphrase = store.settings.cbpPassphrase;
   const secret = store.settings.cbpSecret;
@@ -59,54 +124,27 @@ export const importCbpTrades = async function() {
   const productIds = actions.getData("productIds") ?? [];
   const accountHistory = actions.getData("accountHistory") ?? [];
   const trades = [];
+
   try {
     accounts = await authedClient.getAccounts();
     //build list of productIds using account history
     for (const account of accounts) {
       if (account.currency == "USD") continue;
-      //TODO use account "after" if incremental == true
-      let after = 1;
-      while (after > 0) {
-        let args = {};
-        if (after != 1) {
-          args.after = after;
-        }
-        lastRequestTime = await throttle(lastRequestTime, 200);
-        const _history = await authedClient.getAccountHistory(account.id, args);
-        for (const h of _history.filter(h => h.type == "match")) {
-          //TODO set before for first record found
-          if (productIds.findIndex(p => p.id == h.details.product_id) == -1) {
-            productIds.push({
-              id: h.details.product_id,
-              before: null
-            });
-          }
-        }
-        trades.push(...mapConversions(_history, account));
-        after = authedClient.after ?? 0;
-      }
+      await processAccount(
+        authedClient,
+        account,
+        productIds,
+        accountHistory,
+        trades,
+        fullDownload
+      );
     }
     //productIds.push({ id: "ETH-USD" });
     for (const productId of productIds) {
-      let after = 1;
-      while (after > 0) {
-        let args = { product_id: productId.id };
-        if (after != 1) {
-          args.after = after;
-        }
-        lastRequestTime = await throttle(lastRequestTime, 200);
-        const _fills = await authedClient.getFills(args);
-        trades.push(...mapFills(_fills));
-        after = authedClient.after ?? 0;
-      }
+      await processProductId(authedClient, productId, trades, fullDownload);
     }
-
-    //Get fills using list of productIds
-    //TODO check the correct amount of trades: 1556 in download, 1562 in csv files
-    //1562 has 16 extra for ETH-BTC = 1546
-    //Are there 10 extra in download?
-    // 1 extra USDC
     console.log(trades);
+    return trades.length;
   } catch (error) {
     Notify.create({
       message: error.message,
@@ -117,6 +155,8 @@ export const importCbpTrades = async function() {
     return -1;
   }
   //merge trades to data
+
+  //TODO use account + txId
 
   // actions.mergeArrayToData(
   //   "internalTransactions",
