@@ -20,7 +20,6 @@
         label="Import Coinbase Pro Transactions"
         @click="importCbpTransactions"
       ></q-btn>
-      <q-btn label="Import Transactions" @click="importTransactions"></q-btn>
       <q-btn label="Clear Transactions" @click="clearTransactions"></q-btn>
       <q-btn label="Clear Price History" @click="clearPriceHistory"></q-btn>
       <br />

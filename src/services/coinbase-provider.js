@@ -77,11 +77,10 @@ async function processAccount(
       accountBefore.before = authedClient.before;
     }
     for (const h of _history.filter(h => h.type == "match")) {
-      //TODO set after for first record found
       if (productIds.findIndex(p => p.id == h.details.product_id) == -1) {
         productIds.push({
           id: h.details.product_id,
-          after: null
+          before: null
         });
       }
     }
@@ -95,14 +94,14 @@ async function processProductId(authedClient, productId, trades, fullDownload) {
     let args = { product_id: productId.id };
     if (after != 1) {
       args.after = after;
-    } else if (productId.after && !fullDownload) {
-      args.after = productId.after;
+    } else if (productId.before && !fullDownload) {
+      args.before = productId.before;
     }
     lastRequestTime = await throttle(lastRequestTime, 200);
     const _fills = await authedClient.getFills(args);
     trades.push(...mapFills(_fills));
-    if (authedClient.after) {
-      productId.after = authedClient.after;
+    if (authedClient.before && after == 1) {
+      productId.before = authedClient.before;
     }
     after = authedClient.after ?? 0;
   }
@@ -144,6 +143,11 @@ export const importCbpTrades = async function(fullDownload) {
       await processProductId(authedClient, productId, trades, fullDownload);
     }
     console.log(trades);
+
+    //TODO save productIds
+    //TODO save accountHistory
+    //TODO merge trades
+
     return trades.length;
   } catch (error) {
     Notify.create({
