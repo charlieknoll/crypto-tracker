@@ -32,6 +32,11 @@ async function getSellTxs(
         tx.isError)
   );
 
+  //TODO filter out txs that have been used by token sell
+
+  //TODO Set taxCode = TF:Token instead of Token Fee
+  //TODO rename allocateTransferFee to allocateTokenFee
+
   feeTxs = feeTxs.map(tx => {
     const feeTx = Object.assign({}, tx);
     feeTx.timestamp = tx.timestamp - 1;
@@ -210,6 +215,9 @@ function allocateTokenFee(tx, buyTxs) {
   let buyTx = buyTxs.find(
     btx => btx.asset == tx.toAccount.name && btx.disposedAmount < btx.amount
   );
+  if (!buyTx) {
+    console.log("Couldn't allocate token fee: ", tx);
+  }
   //TODO adjust cost basis for fees from sale tx
   let i = 0;
 
@@ -272,8 +280,9 @@ export const getCapitalGains = async function() {
       allocateTransferFee(_tx, buyTxs);
     }
     if (
-      tx.action == "TOKEN FEE" &&
-      tokenTxs.findIndex(tt => tt.parentTx.hash == tx.hash) == -1
+      tx.action == "TOKEN FEE"
+      // tx.action == "TOKEN FEE" &&
+      // tokenTxs.findIndex(tt => tt.parentTx.hash == tx.hash) == -1
     ) {
       allocateTokenFee(tx, buyTxs);
     }
