@@ -8,7 +8,8 @@ async function getSellTxs(
   chainTxs,
   tokenTxs,
   exchangeTrades,
-  offchainTransfers
+  offchainTransfers,
+  exchangeTransferFees
 ) {
   let sellTxs = chainTxs.filter(
     tx => (tx.taxCode == "SPENDING" || tx.taxCode == "EXPENSE") && !tx.isError
@@ -31,7 +32,6 @@ async function getSellTxs(
         tx.isError)
   );
 
-  //TODO map ethGasFee to amount, fee = 0.0, asset = ETH
   feeTxs = feeTxs.map(tx => {
     const feeTx = Object.assign({}, tx);
     feeTx.timestamp = tx.timestamp - 1;
@@ -54,7 +54,9 @@ async function getSellTxs(
     feeTx.account = tx.fromName;
     return feeTx;
   });
+  //TODO add exchangeTransferFees to feeTxs with action: "TF:" + fee.currency
 
+  feeTxs.push(...exchangeTransferFees);
   let offChainFeeTxs = offchainTransfers.filter(tx => tx.transferFee > 0.0);
   const _offChainFeeTxs = [];
   for (const tx of offChainFeeTxs) {
@@ -241,12 +243,16 @@ export const getCapitalGains = async function() {
   const exchangeTrades = await getExchangeTrades();
   const openingPositions = (await actions.getData("openingPositions")) ?? [];
   const offchainTransfers = (await actions.getData("offchainTransfers")) ?? [];
+  const exchangeTransferFees =
+    (await actions.getData("exchangeTransferFees")) ?? [];
+
   tokenTxs = tokenTxs.filter(tx => tx.tracked);
   let sellTxs = await getSellTxs(
     chainTxs,
     tokenTxs,
     exchangeTrades,
-    offchainTransfers
+    offchainTransfers,
+    exchangeTransferFees
   );
   let buyTxs = getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions);
 
@@ -279,6 +285,12 @@ export const columns = [
     name: "date",
     label: "Date",
     field: "date",
+    align: "left"
+  },
+  {
+    name: "timestamp",
+    label: "Timestamp",
+    field: "timestamp",
     align: "left"
   },
   {

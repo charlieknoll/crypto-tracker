@@ -242,9 +242,7 @@ export const getTokenTransactions = async function() {
   //start with tx's and insert any token txs
   const mappedTxs = [];
   const parentTxs = await getChainTransactions();
-  const baseCurrencies = store.settings.baseCurrencies
-    .replaceAll(" ", "")
-    .split(",");
+  const baseCurrencies = actions.getBaseCurrencies();
   let trackedTokens = store.settings.trackedTokens
     .replaceAll(" ", "")
     .split(",");

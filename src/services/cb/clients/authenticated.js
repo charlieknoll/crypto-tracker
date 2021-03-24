@@ -79,7 +79,14 @@ class AuthenticatedClient extends PublicClient {
       callback
     );
   }
+  getTransfers(args = {}, callback) {
+    if (!callback && typeof args === "function") {
+      callback = args;
+      args = {};
+    }
 
+    return this.get(["transfers"], { qs: args }, callback);
+  }
   getAccountHolds(accountID, args = {}, callback) {
     if (!callback && typeof args === "function") {
       callback = args;

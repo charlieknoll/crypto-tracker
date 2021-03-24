@@ -18,7 +18,9 @@ export const getPrice = async function(symbol, tradeDate) {
   if (tradeDatePrice) {
     return tradeDatePrice.price;
   }
-
+  if (actions.getBaseCurrencies().find(bc => bc == symbol)) {
+    return 1.0;
+  }
   //Get price from Coingecko
   if (!coinGeckoSymbolMap[symbol]) {
     //TODO add to coingecko symbol list without coinid, auto lookup?

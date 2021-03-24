@@ -77,7 +77,7 @@ export default {
       //call etherscan import service
       try {
         this.$store.importing = true;
-        await importCbpTrades();
+        await importCbpTrades(true);
       } finally {
         this.$store.importing = false;
       }

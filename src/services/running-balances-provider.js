@@ -12,6 +12,9 @@ export const getRunningBalances = async function() {
   const chainTransactions = await getChainTransactions();
   const tokenTransactions = await getTokenTransactions();
   const exchangeTrades = await getExchangeTrades();
+  const exchangeTransferFees =
+    (await actions.getData("exchangeTransferFees")) ?? [];
+
   for (const tx of openingPositions) {
     mappedData.push({
       txId: "opening-" + tx.txId,
@@ -132,6 +135,19 @@ export const getRunningBalances = async function() {
       action: tx.action
     });
   }
+  for (const tx of exchangeTransferFees) {
+    mappedData.push({
+      txId: "Exf-" + tx.txId.substring(0, 13),
+      timestamp: tx.timestamp,
+      account: tx.account,
+      date: tx.date,
+      amount: -tx.amount,
+      asset: tx.asset,
+      price: tx.price,
+      type: tx.action,
+      action: tx.action
+    });
+  }
   mappedData = mappedData.sort((a, b) => a.timestamp - b.timestamp);
   //Sort by timestamp
   //TODO set running balances
@@ -220,6 +236,12 @@ export const columns = [
     name: "date",
     label: "Date",
     field: "date",
+    align: "left"
+  },
+  {
+    name: "timestamp",
+    label: "Timestamp",
+    field: "timestamp",
     align: "left"
   },
   {

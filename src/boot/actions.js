@@ -20,6 +20,9 @@ export const actions = {
   getData: function(key) {
     return LocalStorage.getItem(key);
   },
+  getBaseCurrencies: function() {
+    return store.settings.baseCurrencies.replaceAll(" ", "").split(",");
+  },
   refreshStoreData: function(key) {
     const val = this.getData(key);
     this.setData(key, val);
@@ -28,14 +31,16 @@ export const actions = {
     const array = LocalStorage.getItem(key) ?? [];
     //delete all existing between timestamps?
     for (const v of val) {
-      if (
-        !array.find(function(a) {
-          return compareFunc(a, v);
-        })
-      ) {
+      const dv = array.find(function(a) {
+        return compareFunc(a, v);
+      });
+      if (!dv) {
         array.push(v);
+      } else {
+        Object.assign(dv, v);
       }
     }
+
     //sort on timestamp
     array.sort((a, b) => a.timestamp - b.timestamp);
     //setLocalStorage
