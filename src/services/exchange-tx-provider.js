@@ -193,12 +193,5 @@ export const columns = [
     field: "gross",
     align: "right",
     format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
-  },
-  {
-    name: "runningBalance",
-    label: "Running Balance",
-    field: "runningBalance",
-    align: "right",
-    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`
   }
 ];

@@ -14,6 +14,7 @@ async function getSellTxs(
   let sellTxs = chainTxs.filter(
     tx => (tx.taxCode == "SPENDING" || tx.taxCode == "EXPENSE") && !tx.isError
   );
+
   sellTxs = sellTxs.map(tx => {
     const sellTx = Object.assign({}, tx);
     sellTx.account = tx.fromName;
@@ -22,19 +23,24 @@ async function getSellTxs(
     sellTx.action = tx.taxCode;
     return sellTx;
   });
-
+  let _sellTokenTxs = tokenTxs.filter(
+    tx => tx.taxCode == "SELL" && tx.displayAmount != 0.0
+  );
   let feeTxs = chainTxs.filter(
     tx =>
       tx.fee > 0.0 &&
+      tx.fromAccount.type == "Owned" &&
       ((tx.taxCode != "SPENDING" &&
         tx.taxCode != "EXPENSE" &&
         tx.fromName != "GENESIS") ||
         tx.isError)
   );
-
   //TODO filter out txs that have been used by token sell
+  feeTxs = feeTxs.filter(ftx => {
+    return _sellTokenTxs.findIndex(stx => stx.hash == ftx.hash) == -1;
+  });
 
-  //TODO Set taxCode = TF:Token instead of Token Fee
+  //TODO Set action = TF:Token instead of Token Fee
   //TODO rename allocateTransferFee to allocateTokenFee
 
   feeTxs = feeTxs.map(tx => {
@@ -47,9 +53,15 @@ async function getSellTxs(
       ? "ERROR FEE"
       : tx.taxCode == "TRANSFER"
       ? "TRANSFER FEE"
-      : tx.toAccount.type == "Token"
-      ? "TOKEN FEE"
       : "FEE";
+    if (
+      feeTx.action == "FEE" &&
+      (tx.toAccount.type == "Token" || tx.toAccount.type == "Income")
+    ) {
+      const parts = tx.toName.split(":");
+      feeTx.action = "TF:" + (parts.length == 2 ? parts[1] : tx.toName);
+    }
+
     if (feeTx.action == "TRANSFER FEE") {
       const tokenTx = tokenTxs.find(tt => tt.hash == feeTx.hash);
       if (tokenTx) {
@@ -76,9 +88,6 @@ async function getSellTxs(
     }
   }
 
-  let _sellTokenTxs = tokenTxs.filter(
-    tx => tx.taxCode == "SELL" && tx.displayAmount != 0.0
-  );
   _sellTokenTxs = _sellTokenTxs.map(tx => {
     const sellTx = Object.assign({}, tx);
     sellTx.account = tx.fromAccount.name;
@@ -179,7 +188,7 @@ function allocateProceeds(tx, buyTxs) {
     );
   }
 }
-function allocateTransferFee(tx, buyTxs) {
+function allocateFee(tx, buyTxs) {
   let buyTx = buyTxs.find(
     btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
   );
@@ -211,40 +220,6 @@ function allocateTransferFee(tx, buyTxs) {
   }
 }
 
-function allocateTokenFee(tx, buyTxs) {
-  let buyTx = buyTxs.find(
-    btx => btx.asset == tx.toAccount.name && btx.disposedAmount < btx.amount
-  );
-  if (!buyTx) {
-    console.log("Couldn't allocate token fee: ", tx);
-  }
-  //TODO adjust cost basis for fees from sale tx
-  let i = 0;
-
-  //reset allocated
-  tx.allocatedAmount = 0.0;
-  while (tx.allocatedAmount != tx.amount && buyTx && i < 100) {
-    const remainingAmount = tx.amount - tx.allocatedAmount;
-    const allocatedAmount =
-      remainingAmount <= buyTx.amount - buyTx.disposedAmount
-        ? remainingAmount
-        : buyTx.amount - buyTx.disposedAmount;
-
-    const allocatedProceeds = (allocatedAmount / tx.amount) * tx.proceeds;
-
-    tx.allocatedAmount += allocatedAmount;
-
-    buyTx.cost += allocatedProceeds;
-
-    i++;
-    buyTx = buyTxs.find(
-      btx =>
-        btx.asset == tx.toAccount.name &&
-        btx.disposedAmount < btx.amount &&
-        btx.txId != buyTx.txId
-    );
-  }
-}
 export const getCapitalGains = async function() {
   const chainTxs = await getChainTransactions();
   let tokenTxs = await getTokenTransactions();
@@ -270,14 +245,14 @@ export const getCapitalGains = async function() {
     allocateProceeds(tx, buyTxs);
     //IMPORTANT, TRANSFER FEES timestamp adjusted -1 so the fees get applied first
     if (tx.action == "TRANSFER FEE") {
-      allocateTransferFee(tx, buyTxs);
+      allocateFee(tx, buyTxs);
     }
     //Only increase cost basis for tx's that did not transfer tokens (approve), token transfers, buys and
     //sells will be applied to the token cost basis
     if (tx.action && tx.action.includes("TF:")) {
       const _tx = Object.assign({}, tx);
       _tx.asset = tx.action.split(":")[1];
-      allocateTransferFee(_tx, buyTxs);
+      allocateFee(_tx, buyTxs);
     }
     if (
       tx.action == "TOKEN FEE"
