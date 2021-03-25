@@ -165,7 +165,7 @@ const menuList = [
     icon: "mdi-database-arrow-down",
     label: "Tax Export",
     separator: true,
-    to: "/export"
+    to: "/tax-export"
   },
   {
     icon: "mdi-cog",

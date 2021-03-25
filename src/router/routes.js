@@ -69,6 +69,11 @@ const routes = [
         component: () => import("pages/PageImport.vue")
       },
       {
+        name: "Tax Export",
+        path: "tax-export",
+        component: () => import("pages/PageTaxExport.vue")
+      },
+      {
         name: "Backup",
         path: "backup",
         component: () => import("pages/PageBackup.vue")

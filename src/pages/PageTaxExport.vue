@@ -1,12 +1,18 @@
 <template>
-  <q-page class="" id="pageCapitalGains">
-    <table-transactions
-      title="Capital Gains"
-      :data="filtered"
-      :columns="columns"
-    >
+  <q-page class="" id="pageTaxExport">
+    <table-transactions title="Tax Export" :data="filtered" :columns="columns">
       <template v-slot:top-right>
-        <filter-account-asset></filter-account-asset>
+        <div style="min-width: 250px; display: inline-block;" class="q-mr-sm">
+          <q-select
+            filled
+            v-model="$store.selectedAssets"
+            multiple
+            :options="$store.assets"
+            use-chips
+            stack-label
+            label="Assets"
+          />
+        </div>
         <q-btn-dropdown stretch flat :label="gainsGrouping">
           <q-list>
             <q-item
@@ -29,21 +35,17 @@
 <script>
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
-import { getCapitalGains, columns } from "../services/capital-gains-provider";
+import { getCapitalGains } from "../services/capital-gains-provider";
+import { columns } from "../services/tax-export-provider";
 import TableTransactions from "src/components/TableTransactions.vue";
-import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
 import Vue from "Vue";
 
-import {
-  filterByAccounts,
-  filterByAssets,
-  filterByYear
-} from "../services/filter-service";
+import { filterByAssets, filterByYear } from "../services/filter-service";
 export default {
-  name: "PageCapitalGains",
+  name: "PageTaxExport",
   data() {
     return {
-      groups: ["Detailed", "Asset Totals", "Totals"],
+      groups: ["Detailed", "Asset Totals", "Long/Short Totals"],
       gainsGrouping: "Detailed",
       capitalGains: Object.freeze([]),
       columns,
@@ -52,71 +54,66 @@ export default {
     };
   },
   components: {
-    FilterAccountAsset,
     TableTransactions
   },
   computed: {
     filtered() {
       let txs = this.capitalGains;
       txs = filterByAssets(txs, this.$store.selectedAssets);
-      txs = filterByAccounts(txs, this.$store.selectedAccounts);
       txs = filterByYear(txs, this.$store.taxYear);
       if (this.gainsGrouping == "Detailed") return Object.freeze(txs);
       //group by year
-      const totals = [];
+      let totals = [];
 
       for (const tx of txs) {
-        let total = totals.find(t => t.asset == tx.asset);
+        let total = totals.find(
+          t => t.asset == tx.asset && t.longShort == tx.longShort
+        );
         if (!total) {
           total = {
             asset: tx.asset,
+            longShort: tx.longShort,
             amount: 0.0,
-            fee: 0.0,
-            gross: 0.0,
             proceeds: 0.0,
-            shortTermGain: 0.0,
-            longTermGain: 0.0,
-            shortLots: 0,
-            longLots: 0
+            costBasis: 0.0,
+            gainOrLoss: 0.0
           };
           totals.push(total);
         }
         total.amount += tx.amount;
-        total.fee += tx.fee;
-        total.gross += tx.gross;
+        total.costBasis += tx.costBasis;
+        total.gainOrLoss += tx.gainOrLoss;
         total.proceeds += tx.proceeds;
-        total.shortTermGain += tx.shortTermGain;
-        total.longTermGain += tx.longTermGain;
-        total.shortLots += tx.shortLots;
-        total.longLots += tx.longLots;
       }
-      if (this.gainsGrouping == "Totals") {
-        const total = {
-          fee: 0.0,
-          gross: 0.0,
-          proceeds: 0.0,
-          shortTermGain: 0.0,
-          longTermGain: 0.0,
-          amount: ""
-        };
+      if (this.gainsGrouping == "Long/Short Totals") {
+        let _totals = [];
+
         for (const t of totals) {
-          total.fee += t.fee;
-          total.gross += t.gross;
+          let total = _totals.find(ts => ts.longShort == t.longShort);
+          if (!total) {
+            total = {
+              asset: `Cryptocurrencies (${t.longShort})`,
+              longShort: t.longShort,
+              proceeds: 0.0,
+              costBasis: 0.0,
+              gainOrLoss: 0.0
+            };
+            _totals.push(total);
+          }
+          total.costBasis += t.costBasis;
+          total.gainOrLoss += t.gainOrLoss;
           total.proceeds += t.proceeds;
-          total.shortTermGain += t.shortTermGain;
-          total.longTermGain += t.longTermGain;
         }
-        totals.length = 0;
-        totals.push(total);
+        totals = _totals;
       }
       return totals;
     }
   },
   methods: {
     async load() {
-      const { sellTxs } = await getCapitalGains();
-      const capitalGains = sellTxs;
-      Vue.set(this, "capitalGains", Object.freeze(capitalGains));
+      const { splitTxs } = await getCapitalGains();
+      const capitalGains = splitTxs;
+      Vue.set(this, "capitalGains", Object.freeze(splitTxs));
     }
   },
   async created() {
@@ -127,7 +124,7 @@ export default {
     store.onload = null;
   },
   mounted() {
-    window.__vue_mounted = "PageCapitalGains";
+    window.__vue_mounted = "PageTaxExport";
   }
 };
 </script>

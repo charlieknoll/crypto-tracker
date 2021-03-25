@@ -150,7 +150,7 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
   buyTxs.sort((a, b) => a.timestamp - b.timestamp);
   return buyTxs;
 }
-function allocateProceeds(tx, buyTxs) {
+function allocateProceeds(tx, buyTxs, splitTxs) {
   let buyTx = buyTxs.find(
     btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
   );
@@ -182,6 +182,18 @@ function allocateProceeds(tx, buyTxs) {
       tx.shortTermGain += gain;
       tx.shortLots += 1;
     }
+    //TODO create split tx
+    const splitTx = {};
+    splitTx.description = "" + allocatedAmount + buyTx.asset;
+    splitTx.asset = buyTx.asset;
+    splitTx.longShort = daysHeld > 365 ? "Long" : "Short";
+    splitTx.dateAcquired = buyTx.date;
+    splitTx.date = tx.date;
+    splitTx.amount = allocatedAmount;
+    splitTx.proceeds = (allocatedAmount / tx.amount) * tx.proceeds;
+    splitTx.costBasis = (allocatedAmount / buyTx.amount) * buyTx.cost;
+    splitTx.gainOrLoss = gain;
+    splitTxs.push(splitTx);
     i++;
     buyTx = buyTxs.find(
       btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
@@ -240,9 +252,9 @@ export const getCapitalGains = async function() {
   let buyTxs = getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions);
 
   //Calc gains for each sell
-
+  const splitTxs = [];
   for (const tx of sellTxs) {
-    allocateProceeds(tx, buyTxs);
+    allocateProceeds(tx, buyTxs, splitTxs);
     //IMPORTANT, TRANSFER FEES timestamp adjusted -1 so the fees get applied first
     if (tx.action == "TRANSFER FEE") {
       allocateFee(tx, buyTxs);
@@ -262,7 +274,7 @@ export const getCapitalGains = async function() {
       allocateTokenFee(tx, buyTxs);
     }
   }
-  return sellTxs;
+  return { sellTxs, splitTxs };
 };
 export const columns = [
   {
