@@ -244,8 +244,8 @@ export const getTokenTransactions = async function() {
   const parentTxs = await getChainTransactions();
   const baseCurrencies = actions.getBaseCurrencies();
   let trackedTokens = store.settings.trackedTokens
-    .replaceAll(" ", "")
-    .split(",");
+    ? store.settings.trackedTokens.replaceAll(" ", "").split(",")
+    : [];
   if (trackedTokens.length == 1 && trackedTokens[0] == "") {
     trackedTokens.pop();
   }

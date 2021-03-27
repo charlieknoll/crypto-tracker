@@ -4,6 +4,8 @@ import { getExchangeTrades } from "./exchange-tx-provider";
 import { actions } from "../boot/actions";
 import { getPrice } from "./price-provider";
 import { formatCurrency, formatDecimalNumber } from "../utils/moneyUtils";
+import { dayNum } from "../utils/dateUtils";
+import { toUtf8Bytes } from "@ethersproject/strings";
 async function getSellTxs(
   chainTxs,
   tokenTxs,
@@ -74,7 +76,7 @@ async function getSellTxs(
   //TODO add exchangeTransferFees to feeTxs with action: "TF:" + fee.currency
 
   feeTxs.push(...exchangeTransferFees);
-  let offChainFeeTxs = offchainTransfers.filter(tx => tx.transferFee > 0.0);
+  let offChainFeeTxs = offchainTransfers.filter(tx => tx.transferFee != 0.0);
   const _offChainFeeTxs = [];
   for (const tx of offChainFeeTxs) {
     if (tx.transferFeeCurrency != "USD") {
@@ -145,10 +147,84 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
   buyTxs = buyTxs.map(tx => {
     tx.cost = tx.gross + tx.fee;
     tx.disposedAmount = 0.0;
+    tx.adjDaysHeld = 0.0;
+    tx.sellTxId = "";
     return tx;
   });
   buyTxs.sort((a, b) => a.timestamp - b.timestamp);
   return buyTxs;
+}
+function applyWashSale(tx, buyTxs, splitTxs) {
+  //TODO find split txs for tx
+  //skip splitTx's which have a gain
+  const _splitTxs = splitTxs.filter(st => {
+    return st.sellTxId == tx.txId && st.gainOrLoss < 0.0;
+  });
+  console.log(_splitTxs);
+  //find buy txs within 30 days of splitTx.date
+  const tradeDate = dayNum(tx.date);
+  let washSaleAdj = 0.0;
+  let washedAmount = 0.0;
+  for (const st of _splitTxs) {
+    const washTxs = buyTxs.filter(bt => {
+      return (
+        Math.abs(dayNum(bt.date) - tradeDate) <= 30 &&
+        bt.disposedAmount < bt.amount &&
+        bt.sellTxId != tx.txId
+      );
+    });
+    //if no washTxs continue to next splitTx
+    if (washTxs.length == 0) continue;
+    //split buyTxs into mulitple if necessary and apply proportional cost basis, apply days held adj
+    for (const wt of washTxs) {
+      if (
+        wt.amount - wt.disposedAmount > st.amount ||
+        wt.disposedAmount > 0.0
+      ) {
+        //split it
+        const _wt = Object.assign({}, wt);
+
+        const allocationAmt =
+          wt.amount - wt.disposedAmount > st.amount
+            ? st.amount
+            : wt.amount - wt.disposedAmount;
+        const allocationCost = (allocationAmt / st.amount) * st.gainOrLoss;
+        //convert proportionally
+        wt.cost = ((wt.amount - allocationAmt) / wt.amount) * wt.cost;
+        wt.fee = ((wt.amount - allocationAmt) / wt.amount) * wt.fee;
+        wt.gross = ((wt.amount - allocationAmt) / wt.amount) * wt.gross;
+
+        _wt.cost = (allocationAmt / _wt.amount) * _wt.cost;
+        _wt.fee = (allocationAmt / _wt.amount) * _wt.fee;
+        _wt.gross = (allocationAmt / _wt.amount) * _wt.gross;
+
+        wt.amount -= allocationAmt;
+        _wt.amount = allocationAmt;
+
+        //move _wt timestamp later
+        //_wt.timestamp -= 1;
+        _wt.disposedAmount = 0.0;
+        _wt.adjDaysHeld += st.daysHeld;
+        _wt.cost -= allocationCost;
+        st.washSaleAdj -= allocationCost;
+        st.gainOrLoss -= allocationCost;
+        buyTxs.push(_wt);
+      } else {
+        //convert it proportionally
+        const allocationAmt = wt.amount - wt.disposedAmount;
+        const allocationPercent = allocationAmt / st.amount;
+        wt.adjDaysHeld += st.adjDaysHeld;
+        wt.costBasis -= allocationPercent * st.gainOrLoss;
+        st.washSaleAdj -= allocationPercent * st.gainOrLoss;
+        st.gainOrLoss = (1 - allocationPercent) * st.gainOrLoss;
+        // st.fee = (1-allocationPercent) * st.fee;
+        // st.proceeds = (1-allocationPercent) * st.gainOrLoss;
+      }
+      if (st.gainOrLoss == 0.0) break;
+    }
+  }
+  //sort buyTxs
+  buyTxs.sort((a, b) => a.timestamp - b.timestamp);
 }
 function allocateProceeds(tx, buyTxs, splitTxs) {
   let buyTx = buyTxs.find(
@@ -164,13 +240,15 @@ function allocateProceeds(tx, buyTxs, splitTxs) {
         : buyTx.amount - buyTx.disposedAmount;
     buyTx.disposedAmount += allocatedAmount;
     tx.allocatedAmount += allocatedAmount;
+    buyTx.sellTxId = tx.txId;
     //TODO determine long vs short
     const daysHeld =
       (new Date(tx.date).getTime() - new Date(buyTx.date).getTime()) /
-      1000 /
-      60 /
-      60 /
-      24;
+        1000 /
+        60 /
+        60 /
+        24 +
+      buyTx.adjDaysHeld;
     const gain =
       (allocatedAmount / tx.amount) * tx.proceeds -
       (allocatedAmount / buyTx.amount) * buyTx.cost;
@@ -184,15 +262,19 @@ function allocateProceeds(tx, buyTxs, splitTxs) {
     }
     //TODO create split tx
     const splitTx = {};
-    splitTx.description = "" + allocatedAmount + buyTx.asset;
+    splitTx.description = "" + allocatedAmount + " " + buyTx.asset;
     splitTx.asset = buyTx.asset;
     splitTx.longShort = daysHeld > 365 ? "Long" : "Short";
     splitTx.dateAcquired = buyTx.date;
+    splitTx.allocatedTxId = buyTx.txId;
+    splitTx.sellTxId = tx.txId;
+    splitTx.daysHeld = daysHeld;
     splitTx.date = tx.date;
     splitTx.amount = allocatedAmount;
     splitTx.proceeds = (allocatedAmount / tx.amount) * tx.proceeds;
     splitTx.costBasis = (allocatedAmount / buyTx.amount) * buyTx.cost;
     splitTx.gainOrLoss = gain;
+    splitTx.washSaleAdj = 0.0;
     splitTxs.push(splitTx);
     i++;
     buyTx = buyTxs.find(
@@ -232,7 +314,7 @@ function allocateFee(tx, buyTxs) {
   }
 }
 
-export const getCapitalGains = async function() {
+export const getCapitalGains = async function(includeWashSales) {
   const chainTxs = await getChainTransactions();
   let tokenTxs = await getTokenTransactions();
   const exchangeTrades = await getExchangeTrades();
@@ -255,6 +337,7 @@ export const getCapitalGains = async function() {
   const splitTxs = [];
   for (const tx of sellTxs) {
     allocateProceeds(tx, buyTxs, splitTxs);
+    if (includeWashSales) applyWashSale(tx, buyTxs, splitTxs);
     //IMPORTANT, TRANSFER FEES timestamp adjusted -1 so the fees get applied first
     if (tx.action == "TRANSFER FEE") {
       allocateFee(tx, buyTxs);

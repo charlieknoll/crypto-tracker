@@ -50,5 +50,12 @@ export const columns = [
     field: "gainOrLoss",
     align: "right",
     format: (val, row) => formatCurrency(val)
+  },
+  {
+    name: "washSaleAdj",
+    label: "Wash Sale Adj",
+    field: "washSaleAdj",
+    align: "right",
+    format: (val, row) => formatCurrency(val)
   }
 ];

@@ -76,7 +76,8 @@ export default {
             amount: 0.0,
             proceeds: 0.0,
             costBasis: 0.0,
-            gainOrLoss: 0.0
+            gainOrLoss: 0.0,
+            washSaleAdj: 0.0
           };
           totals.push(total);
         }
@@ -84,6 +85,7 @@ export default {
         total.costBasis += tx.costBasis;
         total.gainOrLoss += tx.gainOrLoss;
         total.proceeds += tx.proceeds;
+        total.washSaleAdj += tx.washSaleAdj;
       }
       if (this.gainsGrouping == "Long/Short Totals") {
         let _totals = [];
@@ -96,13 +98,15 @@ export default {
               longShort: t.longShort,
               proceeds: 0.0,
               costBasis: 0.0,
-              gainOrLoss: 0.0
+              gainOrLoss: 0.0,
+              washSaleAdj: 0.0
             };
             _totals.push(total);
           }
           total.costBasis += t.costBasis;
           total.gainOrLoss += t.gainOrLoss;
           total.proceeds += t.proceeds;
+          total.washSaleAdj += t.washSaleAdj;
         }
         totals = _totals;
       }
@@ -111,7 +115,7 @@ export default {
   },
   methods: {
     async load() {
-      const { splitTxs } = await getCapitalGains();
+      const { splitTxs } = await getCapitalGains(true);
       const capitalGains = splitTxs;
       Vue.set(this, "capitalGains", Object.freeze(splitTxs));
     }

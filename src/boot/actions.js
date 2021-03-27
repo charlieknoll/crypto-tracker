@@ -21,6 +21,7 @@ export const actions = {
     return LocalStorage.getItem(key);
   },
   getBaseCurrencies: function() {
+    if (!store.settings.baseCurrencies) return [];
     return store.settings.baseCurrencies.replaceAll(" ", "").split(",");
   },
   refreshStoreData: function(key) {

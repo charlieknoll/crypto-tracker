@@ -21,8 +21,9 @@ export const processExchangeTradesFile = function(data) {
       throw new Error("Invalid action in trade data.");
     }
     const txId =
-      op.ExchangeId.trim() == ""
-        ? ethers.utils
+      op.ExchangeId && op.ExchangeId.trim() != ""
+        ? op.ExchangeId
+        : ethers.utils
             .id(
               op.Date +
                 op.Action +
@@ -30,11 +31,9 @@ export const processExchangeTradesFile = function(data) {
                 op.Currency +
                 op.Symbol +
                 op.Price +
-                op.Amount +
-                op.ExchangeId
+                op.Volume
             )
-            .substring(2, 12)
-        : op.ExchangeId;
+            .substring(2, 12);
     const date = op.Date.substring(0, 10);
     const account = op.Account == "" ? op.Memo : op.Account;
     mappedData.push({
