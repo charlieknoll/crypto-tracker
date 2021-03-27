@@ -170,7 +170,8 @@ function applyWashSale(tx, buyTxs, splitTxs) {
       return (
         Math.abs(dayNum(bt.date) - tradeDate) <= 30 &&
         bt.disposedAmount < bt.amount &&
-        bt.sellTxId != tx.txId
+        bt.sellTxId != tx.txId &&
+        bt.asset == tx.asset
       );
     });
     //if no washTxs continue to next splitTx
