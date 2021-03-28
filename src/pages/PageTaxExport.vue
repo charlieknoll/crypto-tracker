@@ -27,6 +27,12 @@
             </q-item>
           </q-list>
         </q-btn-dropdown>
+        <q-btn
+          class="q-ml-lg"
+          color="primary"
+          label="8949"
+          @click="export8949"
+        />
       </template>
     </table-transactions>
   </q-page>
@@ -36,10 +42,10 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { getCapitalGains } from "../services/capital-gains-provider";
-import { columns } from "../services/tax-export-provider";
+import { columns, generate8949 } from "../services/tax-export-provider";
 import TableTransactions from "src/components/TableTransactions.vue";
 import Vue from "Vue";
-
+import { exportFile } from "quasar";
 import { filterByAssets, filterByYear } from "../services/filter-service";
 export default {
   name: "PageTaxExport",
@@ -118,6 +124,21 @@ export default {
       const { splitTxs } = await getCapitalGains(true);
       const capitalGains = splitTxs;
       Vue.set(this, "capitalGains", Object.freeze(splitTxs));
+    },
+    export8949() {
+      const content = generate8949(this.filtered);
+      const status = exportFile(
+        "8949-" + this.$store.taxYear + ".csv",
+        content,
+        "text/csv"
+      );
+      if (status !== true) {
+        this.$q.notify({
+          message: "Browser denied file download...",
+          color: "negative",
+          icon: "warning"
+        });
+      }
     }
   },
   async created() {

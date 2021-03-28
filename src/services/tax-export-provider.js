@@ -1,4 +1,72 @@
-import { formatCurrency } from "../utils/moneyUtils";
+import { formatCurrency, formatNumber } from "../utils/moneyUtils";
+import { convertToCsvNoHeadher } from "../utils/arrayUtil";
+function getTotals(txs) {
+  const totals = {
+    description: "Totals",
+    dateAcquired: "",
+    dateSold: "",
+    proceeds: 0.0,
+    costBasis: 0.0,
+    adjustmentCode: "",
+    washSaleAdj: 0.0,
+    gainOrLoss: 0.0
+  };
+  for (const tx of txs) {
+    totals.proceeds += tx.proceeds;
+    totals.costBasis += tx.costBasis;
+    totals.gainOrLoss += tx.gainOrLoss;
+    totals.washSaleAdj += tx.washSaleAdj;
+  }
+  return totals;
+}
+function formatTxs(txs) {
+  txs = txs.map(tx => {
+    tx.adjustmentCode = tx.washSaleAdj > 0.0 ? "W" : "";
+    tx.proceeds = formatNumber(tx.proceeds);
+    tx.costBasis = formatNumber(tx.costBasis);
+    tx.gainOrLoss = formatNumber(tx.gainOrLoss);
+    tx.washSaleAdj = formatNumber(tx.washSaleAdj);
+    return tx;
+  });
+}
+export const generate8949 = function(txs) {
+  const names = [
+    "description",
+    "dateAcquired",
+    "dateSold",
+    "proceeds",
+    "costBasis",
+    "adjustmentCode",
+    "washSaleAdj",
+    "gainOrLoss"
+  ];
+
+  const shortTxs = txs.filter(tx => tx.longShort == "Short");
+  const longTxs = txs.filter(tx => tx.longShort == "Long");
+  shortTxs.push(getTotals(shortTxs));
+  longTxs.push(getTotals(longTxs));
+  formatTxs(shortTxs);
+  formatTxs(longTxs);
+  let content = `Form 8949 Statement`;
+  content += "\r\n";
+  content += "\r\n";
+  content += "Part I (Short-Term)";
+  content += "\r\n";
+  content += `Description (a),Date Acquired(b),Date Sold (c),Proceeds (d),Cost Basis(e),Adjustment Code (f),Adjustment amount(g),Gain or loss(h)`;
+  content += "\r\n";
+  content += convertToCsvNoHeadher(shortTxs, names, ",");
+  content += "\r\n";
+  content += "\r\n";
+  content += "Part II (Long-Term)";
+  content += "\r\n";
+  content += `Description (a),Date Acquired(b),Date Sold (c),Proceeds (d),Cost Basis(e),Adjustment Code (f),Adjustment amount(g),Gain or loss(h)`;
+  content += "\r\n";
+  content += convertToCsvNoHeadher(longTxs, names, ",");
+  content += "\r\n";
+  content += "\r\n";
+
+  return content;
+};
 export const columns = [
   {
     name: "asset",

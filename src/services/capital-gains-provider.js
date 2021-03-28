@@ -160,7 +160,7 @@ function applyWashSale(tx, buyTxs, splitTxs) {
   const _splitTxs = splitTxs.filter(st => {
     return st.sellTxId == tx.txId && st.gainOrLoss < 0.0;
   });
-  console.log(_splitTxs);
+  //console.log(_splitTxs);
   //find buy txs within 30 days of splitTx.date
   const tradeDate = dayNum(tx.date);
   let washSaleAdj = 0.0;
