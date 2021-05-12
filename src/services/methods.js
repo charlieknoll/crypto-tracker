@@ -106,6 +106,10 @@ const methodIds = [
   {
     id: "0xacf1a841",
     name: "renew"
+  },
+  {
+    id: "0x2b6e993a",
+    name: "add_liquidity"
   }
 ];
 export default function getMethodName(input) {

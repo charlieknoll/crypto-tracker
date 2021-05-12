@@ -46,6 +46,8 @@ Issues that this solves are describe in this blog post:
 
 https://www.cointracker.io/blog/defi-yield-farming-crypto-tax-guide
 
+https://coinpanda.io/blog/cryptocurrency-staking-taxes/
+
 To use the tool:
 
 - Add an owned account on the "Addresses" page
