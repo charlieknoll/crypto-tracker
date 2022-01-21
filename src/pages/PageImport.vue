@@ -92,6 +92,7 @@ export default {
     clearTransactions() {
       this.$actions.setData("chainTransactions", []);
       this.$actions.setData("tokenTransactions", []);
+      this.$actions.setData("internalTransactions", []);
       const addresses = [...this.$store.addresses];
       const cleansedAddresses = [];
       for (const a of addresses) {

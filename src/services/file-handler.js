@@ -50,6 +50,31 @@ function processSettingsFile(content) {
   actions.setObservableData("settings", settings);
   return 1;
 }
+function processAllDataFile(content) {
+  const backup = JSON.parse(content);
+
+  actions.setObservableData("taxYear", backup.taxYear);
+  const addresses = backup.addresses.map(a => new Address(a));
+  actions.setObservableData("addresses", addresses);
+  actions.setObservableData("exchangeTrades", backup.exchangeTrades);
+  actions.setData("tokenTransactions", backup.tokenTransactions);
+  actions.setData("prices", backup.prices);
+  actions.setData("chainTransactions", backup.chainTransactions);
+  actions.setData("exchangeTransferFees", backup.exchangeTransferFees);
+  actions.setObservableData("offchainTransfers", backup.offchainTransfers);
+  actions.setObservableData("openingPositions", backup.openingPositions);
+  actions.setObservableData("settings", backup.settings);
+  return (
+    addresses.length +
+    backup.exchangeTrades.length +
+    backup.tokenTransactions.length +
+    backup.chainTransactions.length +
+    backup.exchangeTransferFees.length +
+    backup.offchainTransfers.length +
+    backup.openingPositions.length +
+    backup.prices.length
+  );
+}
 export const processFile = function(name, content) {
   store.updated = true;
   //TODO route file to proper processor
@@ -70,6 +95,9 @@ export const processFile = function(name, content) {
   }
   if (name.substring(0, 8) == "settings") {
     return processSettingsFile(content);
+  }
+  if (name.substring(0, 8) == "all-data") {
+    return processAllDataFile(content);
   }
   //return message
 };

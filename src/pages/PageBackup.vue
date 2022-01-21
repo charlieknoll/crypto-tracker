@@ -17,6 +17,7 @@
         @click="downloadSettings"
         :color="$store.settingsNeedsBackup ? 'negative' : 'grey'"
       ></q-btn>
+      <q-btn label="Download All" @click="downloadAll" color="grey"></q-btn>
     </q-form>
   </q-page>
 </template>
@@ -39,6 +40,36 @@ export default {
     };
   },
   methods: {
+    downloadAll() {
+      const backup = {};
+      backup.taxYear = this.$store.taxYear;
+      backup.exchangeTrades = this.$actions.getData("exchangeTrades") ?? [];
+      backup.tokenTransactions =
+        this.$actions.getData("tokenTransactions") ?? [];
+      backup.prices = this.$actions.getData("prices") ?? [];
+      backup.accountHistory = this.$actions.getData("accountHistory") ?? [];
+      backup.chainTransactions =
+        this.$actions.getData("chainTransactions") ?? [];
+      backup.exchangeTransferFees =
+        this.$actions.getData("exchangeTransferFees") ?? [];
+      backup.offchainTransfers =
+        this.$actions.getData("offchainTransfers") ?? [];
+      backup.addresses = this.$actions.getData("addresses") ?? [];
+      backup.settings = Object.assign(
+        {},
+        this.$actions.getData("settings") ?? []
+      );
+      backup.openingPositions = this.$actions.getData("openingPositions") ?? [];
+      const pContent = JSON.stringify(backup);
+      const pStatus = exportFile("all-data.json", pContent, "text/csv");
+      if (pStatus !== true) {
+        this.$q.notify({
+          message: "Browser denied file download...",
+          color: "negative",
+          icon: "warning"
+        });
+      }
+    },
     downloadAddresses() {
       const simpleAddress = this.$store.addresses.map(a => {
         return { address: a.address, name: a.name, type: a.type };

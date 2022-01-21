@@ -110,6 +110,14 @@ const methodIds = [
   {
     id: "0x2b6e993a",
     name: "add_liquidity"
+  },
+  {
+    id: "0x4e71d92d",
+    name: "claim"
+  },
+  {
+    id: "0x9fdaea0c",
+    name: "remove_liquidity_imbalance"
   }
 ];
 export default function getMethodName(input) {

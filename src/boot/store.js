@@ -17,20 +17,6 @@ if (settings.trackSpentTokens == undefined) settings.trackSpentTokens = true;
 
 const _store = Vue.observable({
   settings,
-  //start old settings
-  // apikey: LocalStorage.getItem("apikey") ?? process.env.ETHERSCAN_API_KEY,
-  // cbpApikey:
-  //   LocalStorage.getItem("cbpApikey") ?? process.env.COINBASE_PRO_API_KEY,
-  // cbpSecret:
-  //   LocalStorage.getItem("cbpSecret") ?? process.env.COINBASE_PRO_API_SECRET,
-  // cbpPassphrase:
-  //   LocalStorage.getItem("cbpPassphrase") ??
-  //   process.env.COINBASE_PRO_PASSPHRASE,
-  // startYear,
-  // baseCurrencies: LocalStorage.getItem("baseCurrencies") ?? "",
-  // trackedTokens: LocalStorage.getItem("trackedTokens") ?? "",
-  // trackSpentTokens: LocalStorage.getItem("trackSpentTokens") ?? true,
-  //end old settings
   assets: [],
   selectedAssets: [],
   selectedAccounts: [],
@@ -52,6 +38,7 @@ const _store = Vue.observable({
   }
 });
 _store.updated = true;
+
 export const store = _store;
 window.ononline = () => (store.onLine = true);
 window.onoffline = () => (store.onLine = false);
