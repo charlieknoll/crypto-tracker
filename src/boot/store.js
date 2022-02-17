@@ -1,7 +1,10 @@
-import Vue from "vue";
-import { AddressbarColor, LocalStorage } from "quasar";
+import { LocalStorage } from "quasar";
 import { empty } from "../utils/stringUtil";
-
+import { boot } from "quasar/wrappers";
+import { reactive } from "vue";
+// window.Buffer = require("buffer/").Buffer;
+// import { Transform } from "stream";
+// window.Transform = Transform;
 //Trick the linter:
 let settings = {};
 settings = LocalStorage.getItem("settings") ?? {};
@@ -15,7 +18,7 @@ taxYears.push("All");
 if (!settings.apikey) settings.apikey = process.env.ETHERSCAN_API_KEY;
 if (settings.trackSpentTokens == undefined) settings.trackSpentTokens = true;
 
-const _store = Vue.observable({
+const _store = reactive({
   settings,
   assets: [],
   selectedAssets: [],
@@ -33,13 +36,22 @@ const _store = Vue.observable({
   taxYear: LocalStorage.getItem("taxYear") ?? 2020,
   onLine: navigator.onLine,
   logs: [],
-  validApikey: function() {
+  validApikey: function () {
     return !empty(this.settings.apikey);
-  }
+  },
 });
 _store.updated = true;
+export default boot(({ app }) => {
+  // for use inside Vue files (Options API) through this.$axios and this.$api
 
-export const store = _store;
+  app.config.globalProperties.$store = _store;
+  // ^ ^ ^ this will allow you to use this.$axios (for Vue Options API form)
+  //       so you won't necessarily have to import axios in each vue file
+
+  // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
+  //       so you can easily perform requests against your app's API
+});
+const store = _store;
+export { store };
 window.ononline = () => (store.onLine = true);
 window.onoffline = () => (store.onLine = false);
-Vue.prototype.$store = store;

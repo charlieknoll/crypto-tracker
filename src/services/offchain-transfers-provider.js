@@ -1,15 +1,15 @@
 import { ethers } from "ethers";
 import { actions } from "../boot/actions";
 
-const parse = require("csv-parse/lib/sync");
+import { parse } from "csv/browser/esm";
 
-export const processOffchainTransfersFile = function(tranfers) {
+export const processOffchainTransfersFile = function (tranfers) {
   const stageTransfers = parse(tranfers, {
     trim: true,
     columns: true,
-    skip_empty_lines: true
+    skip_empty_lines: true,
   });
-  const mappedData = stageTransfers.map(function(t) {
+  const mappedData = stageTransfers.map(function (t) {
     //TODO add usd fee so fees can be added to cap gains
     return {
       timestamp: new Date(t.Date).timestamp,
@@ -27,7 +27,7 @@ export const processOffchainTransfersFile = function(tranfers) {
         ? t.Id.trim()
         : ethers.utils
             .id(t.Date + t.Symbol + t.ToAccount + t.FromAccount + t.Volume)
-            .substring(2, 9)
+            .substring(2, 9),
     };
   });
   actions.mergeArrayToData(
@@ -43,54 +43,54 @@ export const columns = [
     name: "date",
     label: "Transfer Date",
     field: "date",
-    align: "left"
+    align: "left",
   },
   {
     name: "timestamp",
     label: "Timestamp",
     field: "timestamp",
-    align: "right"
+    align: "right",
   },
   {
     name: "txId",
     label: "Id",
     field: "txId",
-    align: "left"
+    align: "left",
   },
   {
     name: "fromName",
     label: "From Account",
     field: "fromName",
-    align: "left"
+    align: "left",
   },
   {
     name: "toName",
     label: "To Account",
     field: "toName",
-    align: "left"
+    align: "left",
   },
   {
     name: "asset",
     label: "Asset",
     field: "asset",
-    align: "left"
+    align: "left",
   },
   {
     name: "amount",
     label: "Amount",
     field: "amount",
-    align: "right"
+    align: "right",
   },
   {
     name: "transferFee",
     label: "Fee",
     field: "transferFee",
-    align: "right"
+    align: "right",
   },
   {
     name: "transferFeeCurrency",
     label: "Fee Currency",
     field: "transferFeeCurrency",
-    align: "left"
-  }
+    align: "left",
+  },
 ];

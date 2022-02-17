@@ -2,7 +2,7 @@
   <q-page class="" id="pageTaxExport">
     <table-transactions title="Tax Export" :data="filtered" :columns="columns">
       <template v-slot:top-right>
-        <div style="min-width: 250px; display: inline-block;" class="q-mr-sm">
+        <div style="min-width: 250px; display: inline-block" class="q-mr-sm">
           <q-select
             filled
             v-model="$store.selectedAssets"
@@ -44,7 +44,7 @@ import { actions } from "../boot/actions";
 import { getCapitalGains } from "../services/capital-gains-provider";
 import { columns, generate8949 } from "../services/tax-export-provider";
 import TableTransactions from "src/components/TableTransactions.vue";
-import Vue from "Vue";
+
 import { exportFile } from "quasar";
 import { filterByAssets, filterByYear } from "../services/filter-service";
 export default {
@@ -56,11 +56,11 @@ export default {
       capitalGains: Object.freeze([]),
       columns,
       $store: store,
-      $actions: actions
+      $actions: actions,
     };
   },
   components: {
-    TableTransactions
+    TableTransactions,
   },
   computed: {
     filtered() {
@@ -73,7 +73,7 @@ export default {
 
       for (const tx of txs) {
         let total = totals.find(
-          t => t.asset == tx.asset && t.longShort == tx.longShort
+          (t) => t.asset == tx.asset && t.longShort == tx.longShort
         );
         if (!total) {
           total = {
@@ -83,7 +83,7 @@ export default {
             proceeds: 0.0,
             costBasis: 0.0,
             gainOrLoss: 0.0,
-            washSaleAdj: 0.0
+            washSaleAdj: 0.0,
           };
           totals.push(total);
         }
@@ -97,7 +97,7 @@ export default {
         let _totals = [];
 
         for (const t of totals) {
-          let total = _totals.find(ts => ts.longShort == t.longShort);
+          let total = _totals.find((ts) => ts.longShort == t.longShort);
           if (!total) {
             total = {
               asset: `Cryptocurrencies (${t.longShort})`,
@@ -105,7 +105,7 @@ export default {
               proceeds: 0.0,
               costBasis: 0.0,
               gainOrLoss: 0.0,
-              washSaleAdj: 0.0
+              washSaleAdj: 0.0,
             };
             _totals.push(total);
           }
@@ -117,13 +117,13 @@ export default {
         totals = _totals;
       }
       return totals;
-    }
+    },
   },
   methods: {
     async load() {
       const { splitTxs } = await getCapitalGains(true);
       const capitalGains = splitTxs;
-      Vue.set(this, "capitalGains", Object.freeze(splitTxs));
+      this.capitalGains = Object.freeze(splitTxs);
     },
     export8949() {
       const content = generate8949(this.filtered);
@@ -136,20 +136,20 @@ export default {
         this.$q.notify({
           message: "Browser denied file download...",
           color: "negative",
-          icon: "warning"
+          icon: "warning",
         });
       }
-    }
+    },
   },
   async created() {
     await this.load();
     store.onload = this.load;
   },
-  destroyed() {
+  unmounted() {
     store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageTaxExport";
-  }
+  },
 };
 </script>

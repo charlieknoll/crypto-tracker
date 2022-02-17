@@ -1,7 +1,7 @@
-'use strict';
-const crypto = require('crypto');
-const querystring = require('querystring');
-const Utils = require('./utilities.js');
+"use strict";
+const crypto = require("crypto");
+const querystring = require("querystring");
+const Utils = require("./utilities.js");
 
 /**
  Signs request messages for authenticated requests to Coinbase Pro
@@ -16,16 +16,16 @@ const Utils = require('./utilities.js');
 module.exports.signRequest = (auth, method, path, options = {}) => {
   Utils.checkAuth(auth);
   const timestamp = Date.now() / 1000;
-  let body = '';
+  let body = "";
   if (options.body) {
     body = JSON.stringify(options.body);
   } else if (options.qs && Object.keys(options.qs).length !== 0) {
-    body = '?' + querystring.stringify(options.qs);
+    body = "?" + querystring.stringify(options.qs);
   }
   const what = timestamp + method.toUpperCase() + path + body;
-  const key = Buffer.from(auth.secret, 'base64');
-  const hmac = crypto.createHmac('sha256', key);
-  const signature = hmac.update(what).digest('base64');
+  const key = Buffer.from(auth.secret, "base64");
+  const hmac = crypto.createHmac("sha256", key);
+  const signature = hmac.update(what).digest("base64");
   return {
     key: auth.key,
     signature: signature,

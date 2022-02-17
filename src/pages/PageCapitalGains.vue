@@ -32,12 +32,11 @@ import { actions } from "../boot/actions";
 import { getCapitalGains, columns } from "../services/capital-gains-provider";
 import TableTransactions from "src/components/TableTransactions.vue";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
-import Vue from "Vue";
 
 import {
   filterByAccounts,
   filterByAssets,
-  filterByYear
+  filterByYear,
 } from "../services/filter-service";
 export default {
   name: "PageCapitalGains",
@@ -48,12 +47,12 @@ export default {
       capitalGains: Object.freeze([]),
       columns,
       $store: store,
-      $actions: actions
+      $actions: actions,
     };
   },
   components: {
     FilterAccountAsset,
-    TableTransactions
+    TableTransactions,
   },
   computed: {
     filtered() {
@@ -66,7 +65,7 @@ export default {
       const totals = [];
 
       for (const tx of txs) {
-        let total = totals.find(t => t.asset == tx.asset);
+        let total = totals.find((t) => t.asset == tx.asset);
         if (!total) {
           total = {
             asset: tx.asset,
@@ -77,7 +76,7 @@ export default {
             shortTermGain: 0.0,
             longTermGain: 0.0,
             shortLots: 0,
-            longLots: 0
+            longLots: 0,
           };
           totals.push(total);
         }
@@ -97,7 +96,7 @@ export default {
           proceeds: 0.0,
           shortTermGain: 0.0,
           longTermGain: 0.0,
-          amount: ""
+          amount: "",
         };
         for (const t of totals) {
           total.fee += t.fee;
@@ -110,24 +109,24 @@ export default {
         totals.push(total);
       }
       return totals;
-    }
+    },
   },
   methods: {
     async load() {
       const { sellTxs } = await getCapitalGains();
       const capitalGains = sellTxs;
-      Vue.set(this, "capitalGains", Object.freeze(capitalGains));
-    }
+      this["capitalGains"] = Object.freeze(capitalGains);
+    },
   },
   async created() {
     await this.load();
     store.onload = this.load;
   },
-  destroyed() {
+  unmounted() {
     store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageCapitalGains";
-  }
+  },
 };
 </script>

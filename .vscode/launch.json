@@ -20,16 +20,9 @@
       "request": "attach",
       "type": "chrome",
       "webRoot": "${workspaceFolder}/src",
-      "url": "http://localhost:8080",
+      "url": "http://localhost:8081/#/",
       "sourceMapPathOverrides": {
-        "webpack:///./src/utils/*": "${webRoot}/utils/*",
-        "webpack:///./src/services/*": "${webRoot}/services/*",
-        "webpack:///./src/data/*": "${webRoot}/data/*",
-        "webpack:///./src/boot/*": "${webRoot}/boot/*",
-        "webpack:///./*": "${webRoot}/*",
-        "webpack:///src/*": "${webRoot}/*",
-        "webpack:///*": "*",
-        "webpack:///./~/*": "${webRoot}/node_modules/*"
+        "webpack://crypto-tracker/./src/*": "${webRoot}/*"
       }
     },
   ]

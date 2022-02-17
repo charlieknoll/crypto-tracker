@@ -2,14 +2,14 @@ import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { throttle } from "../utils/cacheUtils";
 
-import AuthenticatedClient from "./cb/clients/authenticated";
+//import AuthenticatedClient from "./cb/clients/authenticated";
 import { Notify } from "quasar";
 import { getPrice } from "./price-provider";
 let lastRequestTime = 0;
 function mapConversions(history, account) {
   return history
-    .filter(h => h.type == "conversion")
-    .map(c => {
+    .filter((h) => h.type == "conversion")
+    .map((c) => {
       const tx = {};
       tx.txId = c.details.conversion_id;
       const tradeDate = new Date(c.created_at);
@@ -27,7 +27,7 @@ function mapConversions(history, account) {
     });
 }
 function mapFills(fills, account) {
-  return fills.map(f => {
+  return fills.map((f) => {
     const tx = {};
     tx.txId = "" + f.trade_id;
     const tradeDate = new Date(f.created_at);
@@ -61,7 +61,7 @@ async function processAccount(
       args.after = after;
     } else {
       //first time through set before and reset account after
-      accountBefore = accountHistory.find(ah => ah.accountId == account.id);
+      accountBefore = accountHistory.find((ah) => ah.accountId == account.id);
       if (accountBefore && accountBefore.before && !fullDownload) {
         args.before = accountBefore.before;
       }
@@ -77,11 +77,11 @@ async function processAccount(
     if (authedClient.before && after == 1) {
       accountBefore.before = authedClient.before;
     }
-    for (const h of _history.filter(h => h.type == "match")) {
-      if (productIds.findIndex(p => p.id == h.details.product_id) == -1) {
+    for (const h of _history.filter((h) => h.type == "match")) {
+      if (productIds.findIndex((p) => p.id == h.details.product_id) == -1) {
         productIds.push({
           id: h.details.product_id,
-          before: null
+          before: null,
         });
       }
     }
@@ -123,8 +123,8 @@ async function getFees(authedClient, accounts, before, fullDownload) {
     const _transfers = await authedClient.getTransfers(args);
     fees.push(
       ..._transfers
-        .filter(t => parseFloat(t.details.fee) > 0.0)
-        .map(t => {
+        .filter((t) => parseFloat(t.details.fee) > 0.0)
+        .map((t) => {
           const fee = {};
           fee.accountId = t.account_id;
           let transferDate = new Date(t.created_at.substring(0, 19));
@@ -134,7 +134,7 @@ async function getFees(authedClient, accounts, before, fullDownload) {
           fee.ethAccount = t.details.sent_to_address;
           fee.amount = parseFloat(t.details.fee);
           fee.fee = 0.0;
-          fee.asset = accounts.find(a => a.id == t.account_id).currency;
+          fee.asset = accounts.find((a) => a.id == t.account_id).currency;
           fee.hash = t.details.crypto_transaction_hash;
           fee.txId = t.id;
           fee.account = "Coinbase Pro";
@@ -154,7 +154,7 @@ async function getFees(authedClient, accounts, before, fullDownload) {
   return { fees, before };
 }
 
-export const importCbpTrades = async function(fullDownload) {
+export const importCbpTrades = async function (fullDownload) {
   const apikey = store.settings.cbpApikey;
   const passphrase = store.settings.cbpPassphrase;
   const secret = store.settings.cbpSecret;
@@ -211,7 +211,7 @@ export const importCbpTrades = async function(fullDownload) {
       message: error.message,
       color: "negative",
       actions: [{ label: "Dismiss", color: "white" }],
-      timeout: 0
+      timeout: 0,
     });
     return -1;
   }

@@ -4,7 +4,6 @@
       :title="'Income - ' + $store.taxYear"
       :data="filtered"
       :columns="columns"
-      @row-click="click"
     >
       <template v-slot:top-right>
         <filter-account-asset></filter-account-asset>
@@ -28,16 +27,14 @@
 </template>
 
 <script>
-import { store } from "../boot/store";
-import { actions } from "../boot/actions";
 import { getIncome, columns } from "../services/income-provider";
-import Vue from "Vue";
+
 import TableTransactions from "src/components/TableTransactions.vue";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
 import {
   filterByAccounts,
   filterByAssets,
-  filterByYear
+  filterByYear,
 } from "../services/filter-service";
 
 export default {
@@ -49,8 +46,6 @@ export default {
       incomeGrouping: "Totals",
       income: Object.freeze([]),
       columns: columns,
-      $store: store,
-      $actions: actions
     };
   },
   computed: {
@@ -63,14 +58,14 @@ export default {
       const totals = [];
 
       for (const tx of txs) {
-        let total = totals.find(t => t.asset == tx.asset);
+        let total = totals.find((t) => t.asset == tx.asset);
         if (!total) {
           total = {
             asset: tx.asset,
             amount: 0.0,
             fee: 0.0,
             gross: 0.0,
-            net: 0.0
+            net: 0.0,
           };
           totals.push(total);
         }
@@ -83,7 +78,7 @@ export default {
         const total = {
           fee: 0.0,
           gross: 0.0,
-          net: 0.0
+          net: 0.0,
         };
         for (const t of totals) {
           total.fee += t.fee;
@@ -95,26 +90,23 @@ export default {
       }
 
       return totals;
-    }
+    },
   },
   methods: {
-    click() {
-      //TODO add method editor popup
-    },
     async load() {
       const income = await getIncome();
-      Vue.set(this, "income", Object.freeze(income));
-    }
+      this.income = Object.freeze(income);
+    },
   },
   async created() {
     await this.load();
-    store.onload = this.load();
+    this.$store.onload = this.load();
   },
-  destroyed() {
-    store.onload = null;
+  unmounted() {
+    this.$store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageIncome";
-  }
+  },
 };
 </script>

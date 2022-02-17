@@ -72,7 +72,7 @@ export default {
     await this.load();
     store.onload = this.load;
   },
-  destroyed() {
+  unmounted() {
     store.onload = null;
   },
   mounted() {

@@ -3,7 +3,7 @@
     <q-dialog v-model="edit" ref="addressDlg">
       <q-card style="min-width: 500px">
         <q-card-section>
-          <form-address :address="record"> </form-address>
+          <form-address v-model:modelValue="record"> </form-address>
         </q-card-section>
         <q-card-actions align="right" class="text-primary">
           <q-btn flat color="red" label="Delete" @click="deleteAddress" />
@@ -27,10 +27,10 @@
     <q-table
       dense
       title="Addresses"
-      :data="filteredAddresses"
+      :rows="filteredAddresses"
       row-key="address"
       @row-click="editAddress"
-      :pagination.sync="pagination"
+      v-model:pagination="pagination"
       :rows-per-page-options="[0]"
     >
       <template v-slot:top-right>
@@ -46,41 +46,37 @@
 </template>
 
 <script>
-import { store } from "../boot/store";
-import { actions } from "../boot/actions";
 import FormAddress from "src/components/FormAddress.vue";
 export default {
   name: "PageAddresses",
   data() {
     return {
       filter: "",
-      addresses: store.addresses,
+      addresses: this.$store.addresses,
       pagination: {
-        rowsPerPage: 0
+        rowsPerPage: 0,
       },
       edit: false,
       record: null,
       updatedRecord: null,
-      $store: store,
-      $actions: actions
     };
   },
   components: {
-    FormAddress
+    FormAddress,
   },
   computed: {
     filteredAddresses() {
       if (this.filter.length == 0) return this.addresses;
+
       const filter = this.filter;
-      const filtered = this.addresses.filter(function(a) {
+      const filtered = this.addresses.filter(function (a) {
         return (
           (a.name && a.name.toLowerCase().includes(filter.toLowerCase())) ||
           (a.address && a.address.toLowerCase().includes(filter.toLowerCase()))
         );
       });
-
       return filtered;
-    }
+    },
   },
   methods: {
     editAddress(evt, row, index) {
@@ -93,8 +89,9 @@ export default {
         name: null,
         isContract: false,
         balance: 0.0,
-        owned: false
+        owned: false,
       });
+
       this.record = this.addresses[this.addresses.length - 1];
       this.edit = true;
     },
@@ -104,11 +101,11 @@ export default {
           title: "Confirm",
           message: "Would you like to delete this account?",
           cancel: true,
-          persistent: true
+          persistent: true,
         })
         .onOk(() => {
           const savedAddresses = this.addresses.filter(
-            a => a.address != this.record.address
+            (a) => a.address != this.record.address
           );
           this.addresses = savedAddresses;
           this.$refs.addressDlg.hide();
@@ -117,13 +114,13 @@ export default {
 
     clearUnnamed() {
       const namedAddresses = this.$store.addresses.filter(
-        a => a.name.substring(0, 2) != "0x"
+        (a) => a.name != null && a.name.substring(0, 2) != "0x"
       );
       this.addresses = namedAddresses;
     },
     load() {
-      this.addresses = store.addresses;
-    }
+      this.addresses = this.$store.addresses;
+    },
   },
   watch: {
     //   "record.name": {
@@ -154,24 +151,24 @@ export default {
     //     }
 
     addresses: {
-      handler: function(val) {
-        actions.setObservableData("addresses", val);
+      handler: function (val) {
+        this.$actions.setObservableData("addresses", val);
         this.$store.updated = true;
-        actions.setObservableData("addressesNeedsBackup", true);
+        this.$actions.setObservableData("addressesNeedsBackup", true);
         // this.$actions.markUpdated();
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   async created() {
     await this.load();
-    store.onload = this.load;
+    this.$store.onload = this.load;
   },
-  destroyed() {
-    store.onload = null;
+  unmounted() {
+    this.$store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageAddresses";
-  }
+  },
 };
 </script>

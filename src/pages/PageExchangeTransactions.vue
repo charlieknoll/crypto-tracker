@@ -19,13 +19,12 @@ import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { columns, getExchangeTrades } from "../services/exchange-tx-provider";
 
-import Vue from "Vue";
 import TableTransactions from "src/components/TableTransactions.vue";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
 import {
   filterByAccounts,
   filterByAssets,
-  filterByYear
+  filterByYear,
 } from "../services/filter-service";
 
 export default {
@@ -38,7 +37,7 @@ export default {
       groupByDay: false,
       page: 1,
       $store: store,
-      $actions: actions
+      $actions: actions,
     };
   },
   computed: {
@@ -52,7 +51,7 @@ export default {
       for (const et of txs) {
         //find an entry for date/asset
         let dateAsset = grouped.find(
-          g => g.asset == et.asset && g.date == et.date
+          (g) => g.asset == et.asset && g.date == et.date
         );
         if (!dateAsset) {
           dateAsset = {
@@ -63,7 +62,7 @@ export default {
             gross: 0.0,
             account: "",
             action: 0,
-            txId: "g-"
+            txId: "g-",
           };
           grouped.push(dateAsset);
         }
@@ -79,7 +78,7 @@ export default {
           dateAsset.account += et.account + ",";
       }
       return grouped;
-    }
+    },
   },
   methods: {
     clear() {
@@ -88,7 +87,7 @@ export default {
           title: "Confirm",
           message: "Clear ALL exchange trades?",
           cancel: true,
-          persistent: true
+          persistent: true,
         })
         .onOk(() => {
           this.$actions.setData("exchangeTrades", []);
@@ -98,19 +97,19 @@ export default {
     },
     async load() {
       const exchangeTrades = await getExchangeTrades();
-      Vue.set(this, "exchangeTrades", Object.freeze(exchangeTrades));
-    }
+      this.exchangeTrades = Object.freeze(exchangeTrades);
+    },
   },
   async created() {
     await this.load();
     store.onload = this.load;
   },
-  destroyed() {
+  unmounted() {
     store.onload = null;
   },
   mounted() {
     window.__vue_mounted = this.name;
-  }
+  },
 };
 </script>
 <style lang="sass">

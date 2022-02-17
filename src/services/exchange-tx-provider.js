@@ -3,13 +3,13 @@ import { actions } from "../boot/actions";
 import { getPrice } from "./price-provider";
 import { floatToMoney } from "../utils/moneyUtils";
 import { LocalStorage } from "quasar";
-const parse = require("csv-parse/lib/sync");
+import { parse } from "csv/browser/esm";
 
-export const processExchangeTradesFile = function(data) {
+export const processExchangeTradesFile = function (data) {
   const stagedData = parse(data, {
     trim: true,
     columns: true,
-    skip_empty_lines: true
+    skip_empty_lines: true,
   });
   const mappedData = [];
 
@@ -48,7 +48,7 @@ export const processExchangeTradesFile = function(data) {
       currency: op.Currency.toUpperCase(),
       asset: op.Symbol,
       action,
-      txId
+      txId,
     });
   }
 
@@ -60,7 +60,7 @@ export const processExchangeTradesFile = function(data) {
   return mappedData.length;
 };
 
-export const getExchangeTrades = async function() {
+export const getExchangeTrades = async function () {
   const data = LocalStorage.getItem("exchangeTrades") ?? [];
   const mappedData = [];
 
@@ -110,7 +110,7 @@ export const getExchangeTrades = async function() {
   const assets = [];
   const _openingPositions = [...(actions.getData("openingPositions") ?? [])];
   for (const op of _openingPositions) {
-    let asset = assets.find(a => a.symbol == op.asset);
+    let asset = assets.find((a) => a.symbol == op.asset);
     if (!asset) {
       asset = { symbol: op.asset, amount: 0.0 };
       assets.push(asset);
@@ -120,7 +120,7 @@ export const getExchangeTrades = async function() {
   }
   //const _exchangeTrades = [...(actions.getData("exchangeTrades") ?? [])];
   for (const et of mappedData) {
-    let asset = assets.find(a => a.symbol == et.asset);
+    let asset = assets.find((a) => a.symbol == et.asset);
     if (!asset) {
       asset = { symbol: et.asset, amount: 0.0 };
       assets.push(asset);
@@ -139,58 +139,58 @@ export const columns = [
     name: "date",
     label: "Date",
     field: "date",
-    align: "left"
+    align: "left",
   },
   {
     name: "txId",
     label: "Id",
     field: "txId",
-    align: "left"
+    align: "left",
   },
   {
     name: "account",
     label: "Account",
     field: "account",
-    align: "left"
+    align: "left",
   },
   {
     name: "asset",
     label: "Asset",
     field: "asset",
-    align: "left"
+    align: "left",
   },
   {
     name: "action",
     label: "Action",
     field: "action",
-    align: "left"
+    align: "left",
   },
   {
     name: "amount",
     label: "Amount",
     field: "amount",
     align: "right",
-    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`
+    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`,
   },
   {
     name: "price",
     label: "Price",
     field: "price",
     align: "right",
-    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
+    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`,
   },
   {
     name: "fee",
     label: "Fee",
     field: "fee",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`,
   },
   {
     name: "gross",
     label: "Gross",
     field: "gross",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
-  }
+    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`,
+  },
 ];

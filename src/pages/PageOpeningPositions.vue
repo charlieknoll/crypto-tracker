@@ -2,7 +2,7 @@
   <q-page class="" id="pageOpeningPositions">
     <table-transactions
       :title="'Opening Positions'"
-      :data="filtered"
+      :rows="filtered"
       :columns="columns"
     >
       <template v-slot:top-right>
@@ -14,11 +14,8 @@
 </template>
 
 <script>
-import { store } from "../boot/store";
-import { actions } from "../boot/actions";
-
 import { columns } from "../services/opening-positions-provider";
-import Vue from "Vue";
+
 import TableTransactions from "src/components/TableTransactions.vue";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
 
@@ -31,8 +28,6 @@ export default {
       openingPositions: Object.freeze([]),
       columns,
       page: 1,
-      $store: store,
-      $actions: actions
     };
   },
   computed: {
@@ -41,7 +36,7 @@ export default {
       txs = filterByAssets(txs, this.$store.selectedAssets);
       txs = filterByAccounts(txs, this.$store.selectedAccounts);
       return Object.freeze(txs);
-    }
+    },
   },
   methods: {
     clear() {
@@ -50,7 +45,7 @@ export default {
           title: "Confirm",
           message: "Clear opening positions?",
           cancel: true,
-          persistent: true
+          persistent: true,
         })
         .onOk(() => {
           this.$actions.setData("openingPositions", []);
@@ -61,19 +56,19 @@ export default {
     async load() {
       const openingPositions =
         (await this.$actions.getData("openingPositions")) ?? [];
-      Vue.set(this, "openingPositions", Object.freeze(openingPositions));
-    }
+      this.openingPositions = Object.freeze(openingPositions);
+    },
   },
   async created() {
     await this.load();
-    store.onload = this.load;
+    this.$store.onload = this.load;
   },
-  destroyed() {
-    store.onload = null;
+  unmounted() {
+    this.$store.onload = null;
   },
 
   mounted() {
     window.__vue_mounted = "PageOpeningPositions";
-  }
+  },
 };
 </script>

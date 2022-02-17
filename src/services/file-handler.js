@@ -1,7 +1,7 @@
 import { processOpeningPositionsFile } from "./opening-positions-provider";
 import { processExchangeTradesFile } from "./exchange-tx-provider";
 import { processOffchainTransfersFile } from "./offchain-transfers-provider";
-const parse = require("csv-parse/lib/sync");
+import { parse } from "csv/browser/esm";
 import Address from "../models/address";
 import { actions } from "../boot/actions";
 import { store } from "../boot/store";
@@ -9,9 +9,9 @@ import { store } from "../boot/store";
 import { Notify } from "quasar";
 import address from "../models/address";
 
-const waitFor = async function(fn, args, ms, interval) {
-  const timeout = function(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+const waitFor = async function (fn, args, ms, interval) {
+  const timeout = function (ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   };
   let timeoutCtr = 0;
   const iterations = ms / interval;
@@ -28,9 +28,9 @@ function processAddressFile(content) {
   const stageOpeningData = parse(content, {
     trim: true,
     columns: true,
-    skip_empty_lines: true
+    skip_empty_lines: true,
   });
-  const addresses = stageOpeningData.map(a => new Address(a));
+  const addresses = stageOpeningData.map((a) => new Address(a));
   actions.setObservableData("addresses", addresses);
   return addresses.length;
 }
@@ -38,7 +38,7 @@ function processPricesFile(content) {
   const pricingData = parse(content, {
     trim: true,
     columns: true,
-    skip_empty_lines: true
+    skip_empty_lines: true,
   });
 
   actions.setObservableData("prices", pricingData);
@@ -54,7 +54,7 @@ function processAllDataFile(content) {
   const backup = JSON.parse(content);
 
   actions.setObservableData("taxYear", backup.taxYear);
-  const addresses = backup.addresses.map(a => new Address(a));
+  const addresses = backup.addresses.map((a) => new Address(a));
   actions.setObservableData("addresses", addresses);
   actions.setObservableData("exchangeTrades", backup.exchangeTrades);
   actions.setData("tokenTransactions", backup.tokenTransactions);
@@ -75,7 +75,7 @@ function processAllDataFile(content) {
     backup.prices.length
   );
 }
-export const processFile = function(name, content) {
+export const processFile = function (name, content) {
   store.updated = true;
   //TODO route file to proper processor
   if (name.substring(0, 5) == "openi") {
@@ -106,7 +106,7 @@ function showNotify(fileName) {
     group: false, // required to be updatable
     timeout: 0, // we want to be in control when it gets dismissed
     spinner: true,
-    message: `Processing ${fileName}}...`
+    message: `Processing ${fileName}}...`,
   });
   return notif;
 }
@@ -116,13 +116,13 @@ function updateNotif(notif, message, iconName) {
     timeout: 4000,
     spinner: false,
     icon: iconName,
-    color: iconName == "done" ? "green" : "red"
+    color: iconName == "done" ? "green" : "red",
   });
 }
-export const processFiles = async function(fileArray, cb) {
+export const processFiles = async function (fileArray, cb) {
   const reader = new FileReader();
   let currentFileName = null;
-  reader.onload = function(event) {
+  reader.onload = function (event) {
     const notif = showNotify(currentFileName);
     try {
       const result = processFile(

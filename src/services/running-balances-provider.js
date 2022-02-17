@@ -2,9 +2,9 @@ import { getChainTransactions } from "./chain-tx-provider";
 import { getTokenTransactions } from "./token-tx-provider";
 import { getExchangeTrades } from "./exchange-tx-provider";
 import { actions } from "../boot/actions";
-import { store } from "../boot/store";
+//import { store } from "../boot/store";
 
-export const getRunningBalances = async function() {
+export const getRunningBalances = async function (store) {
   if (!store.updated) return store.runningBalances;
   let mappedData = [];
   const openingPositions = (await actions.getData("openingPositions")) ?? [];
@@ -24,7 +24,7 @@ export const getRunningBalances = async function() {
       amount: tx.amount,
       asset: tx.asset,
       price: tx.price,
-      type: "Open"
+      type: "Open",
     });
   }
   for (const tx of offchainTransfers) {
@@ -35,7 +35,7 @@ export const getRunningBalances = async function() {
       date: tx.date,
       amount: tx.amount,
       asset: tx.asset,
-      type: "Transfer In"
+      type: "Transfer In",
     });
     mappedData.push({
       txId: "Tr-O-" + tx.txId,
@@ -47,7 +47,7 @@ export const getRunningBalances = async function() {
           ? -tx.amount - tx.transferFee
           : -tx.amount,
       asset: tx.asset,
-      type: "Transfer Out"
+      type: "Transfer Out",
     });
   }
   for (const tx of chainTransactions) {
@@ -62,7 +62,7 @@ export const getRunningBalances = async function() {
         asset: "ETH",
         price: tx.price,
         type: "Chain-in",
-        hash: tx.hash
+        hash: tx.hash,
       });
     }
     if (tx.fromAccount.type.toLowerCase().includes("owned")) {
@@ -75,11 +75,11 @@ export const getRunningBalances = async function() {
         asset: "ETH",
         price: tx.price,
         type: "Chain-out",
-        hash: tx.hash
+        hash: tx.hash,
       });
     }
   }
-  const _tokenTransactions = tokenTransactions.filter(tt => tt.tracked);
+  const _tokenTransactions = tokenTransactions.filter((tt) => tt.tracked);
   for (const tx of _tokenTransactions) {
     if (tx.isError) continue;
     const internalTransfer =
@@ -98,7 +98,7 @@ export const getRunningBalances = async function() {
         price: tx.price,
         type: "Token-in",
         hash: tx.hash,
-        action: tx.methodName
+        action: tx.methodName,
       });
     }
     if (tx.fromAccount.type.toLowerCase().includes("owned")) {
@@ -113,7 +113,7 @@ export const getRunningBalances = async function() {
         price: tx.price,
         type: "Token-out",
         hash: tx.hash,
-        action: tx.methodName
+        action: tx.methodName,
       });
     }
   }
@@ -132,7 +132,7 @@ export const getRunningBalances = async function() {
       asset: tx.asset,
       price: tx.price,
       type: tx.action,
-      action: tx.action
+      action: tx.action,
     });
   }
   for (const tx of exchangeTransferFees) {
@@ -145,7 +145,7 @@ export const getRunningBalances = async function() {
       asset: tx.asset,
       price: tx.price,
       type: tx.action,
-      action: tx.action
+      action: tx.action,
     });
   }
   mappedData = mappedData.sort((a, b) => a.timestamp - b.timestamp);
@@ -154,12 +154,12 @@ export const getRunningBalances = async function() {
   const accountAssets = [];
   let assets = [];
   for (const tx of mappedData) {
-    let asset = assets.find(a => a.symbol == tx.asset);
+    let asset = assets.find((a) => a.symbol == tx.asset);
     if (!asset) {
       asset = {
         endingTxs: {},
         symbol: tx.asset,
-        amount: 0.0
+        amount: 0.0,
       };
       assets.push(asset);
     }
@@ -168,14 +168,14 @@ export const getRunningBalances = async function() {
     asset.endingTxs[tx.date.substring(0, 4)] = tx;
 
     let accountAsset = accountAssets.find(
-      a => a.symbol == tx.asset && a.account == tx.account
+      (a) => a.symbol == tx.asset && a.account == tx.account
     );
     if (!accountAsset) {
       accountAsset = {
         endingTxs: {},
         symbol: tx.asset,
         amount: 0.0,
-        account: tx.account
+        account: tx.account,
       };
       accountAssets.push(accountAsset);
     }
@@ -220,8 +220,8 @@ export const getRunningBalances = async function() {
   }
 
   //build unique list of assets,accounts
-  const accountNames = [...new Set(accountAssets.map(aa => aa.account))];
-  assets = [...new Set(assets.map(aa => aa.symbol))];
+  const accountNames = [...new Set(accountAssets.map((aa) => aa.account))];
+  assets = [...new Set(assets.map((aa) => aa.symbol))];
   assets.sort();
   accountNames.sort();
   store.assets = assets;
@@ -236,70 +236,70 @@ export const columns = [
     name: "date",
     label: "Date",
     field: "date",
-    align: "left"
+    align: "left",
   },
   {
     name: "timestamp",
     label: "Timestamp",
     field: "timestamp",
-    align: "left"
+    align: "left",
   },
   {
     name: "txId",
     label: "Id",
     field: "txId",
-    align: "left"
+    align: "left",
   },
   {
     name: "account",
     label: "Account",
     field: "account",
-    align: "left"
+    align: "left",
   },
   {
     name: "asset",
     label: "Asset",
     field: "asset",
-    align: "left"
+    align: "left",
   },
   {
     name: "type",
     label: "Type",
     field: "type",
-    align: "left"
+    align: "left",
   },
   {
     name: "action",
     label: "Action",
     field: "action",
-    align: "left"
+    align: "left",
   },
   {
     name: "amount",
     label: "Amount",
     field: "amount",
     align: "right",
-    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`
+    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`,
   },
   {
     name: "price",
     label: "Price",
     field: "price",
     align: "right",
-    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
+    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`,
   },
   {
     name: "runningAccountBalance",
     label: "Running Acct Balance",
     field: "runningAccountBalance",
     align: "right",
-    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`
+    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`,
   },
   {
     name: "runningBalance",
     label: "Running Balance",
     field: "runningBalance",
     align: "right",
-    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`
-  }
+    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`,
+  },
 ];

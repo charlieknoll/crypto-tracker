@@ -1,15 +1,15 @@
 import { ethers } from "ethers";
 import { actions } from "../boot/actions";
 
-const parse = require("csv-parse/lib/sync");
+import { parse } from "csv/browser/esm";
 
-export const processOpeningPositionsFile = function(openingData) {
+export const processOpeningPositionsFile = function (openingData) {
   const stageOpeningData = parse(openingData, {
     trim: true,
     columns: true,
-    skip_empty_lines: true
+    skip_empty_lines: true,
   });
-  const mappedOpeningData = stageOpeningData.map(function(op) {
+  const mappedOpeningData = stageOpeningData.map(function (op) {
     return {
       timestamp: new Date(op.Date).timestamp,
       memo: op.Memo,
@@ -26,7 +26,7 @@ export const processOpeningPositionsFile = function(openingData) {
         Math.round(parseFloat(op.Price) * parseFloat(op.Volume) * 100) / 100,
       txId: ethers.utils
         .id(op.Date + op.Symbol + op.Price + op.Amount)
-        .substring(2, 9)
+        .substring(2, 9),
     };
   });
   actions.mergeArrayToData(
@@ -42,51 +42,51 @@ export const columns = [
     name: "date",
     label: "Acquisition Date",
     field: "date",
-    align: "left"
+    align: "left",
   },
   {
     name: "txId",
     label: "Id",
     field: "txId",
-    align: "left"
+    align: "left",
   },
   {
     name: "account",
     label: "Account",
     field: "account",
-    align: "left"
+    align: "left",
   },
   {
     name: "asset",
     label: "Asset",
     field: "asset",
-    align: "left"
+    align: "left",
   },
   {
     name: "amount",
     label: "Amount",
     field: "amount",
-    align: "right"
+    align: "right",
   },
   {
     name: "price",
     label: "Price",
     field: "price",
     align: "right",
-    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
+    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`,
   },
   {
     name: "fee",
     label: "Fee",
     field: "fee",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`,
   },
   {
     name: "gross",
     label: "Cost",
     field: "gross",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
-  }
+    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`,
+  },
 ];

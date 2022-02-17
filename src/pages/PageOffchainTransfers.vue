@@ -17,13 +17,12 @@
 import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { columns } from "../services/offchain-transfers-provider";
-import Vue from "Vue";
 import TableTransactions from "src/components/TableTransactions.vue";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
 import {
   filterByAccounts,
   filterByAssets,
-  filterByYear
+  filterByYear,
 } from "../services/filter-service";
 
 export default {
@@ -35,7 +34,7 @@ export default {
       columns,
       page: 1,
       $store: store,
-      $actions: actions
+      $actions: actions,
     };
   },
   computed: {
@@ -45,7 +44,7 @@ export default {
       txs = filterByAssets(txs, this.$store.selectedAssets);
 
       return txs;
-    }
+    },
   },
   methods: {
     clear() {
@@ -54,7 +53,7 @@ export default {
           title: "Confirm",
           message: "Clear ALL offchain transfers?",
           cancel: true,
-          persistent: true
+          persistent: true,
         })
         .onOk(() => {
           this.$actions.setData("offchainTransfers", []);
@@ -65,18 +64,18 @@ export default {
     async load() {
       const offchainTransfers =
         (await this.$actions.getData("offchainTransfers")) ?? [];
-      Vue.set(this, "offchainTransfers", Object.freeze(offchainTransfers));
-    }
+      this.offchainTransfers = Object.freeze(offchainTransfers);
+    },
   },
   async created() {
     await this.load();
     store.onload = this.load;
   },
-  destroyed() {
+  unmounted() {
     store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageOffchainTransfers";
-  }
+  },
 };
 </script>
