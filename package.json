@@ -11,18 +11,18 @@
   },
   "dependencies": {
     "@quasar/cli": "^1.2.2",
-    "@quasar/extras": "^1.12.4",
+    "@quasar/extras": "^1.12.5",
     "axios": "^0.25.0",
     "csv": "^6.0.5",
     "ethers": "^5.5.4",
-    "quasar": "^2.5.2",
+    "quasar": "^2.5.5",
     "stream": "^0.0.2",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.13.14",
-    "@quasar/app": "^3.3.2",
+    "@quasar/app": "^3.3.3",
     "dotenv": "^8.2.0",
     "eslint": "^7.14.0",
     "eslint-config-prettier": "^8.1.0",

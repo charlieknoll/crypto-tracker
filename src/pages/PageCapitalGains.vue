@@ -2,7 +2,7 @@
   <q-page class="" id="pageCapitalGains">
     <table-transactions
       title="Capital Gains"
-      :data="filtered"
+      :rows="filtered"
       :columns="columns"
     >
       <template v-slot:top-right>
@@ -27,8 +27,6 @@
 </template>
 
 <script>
-import { store } from "../boot/store";
-import { actions } from "../boot/actions";
 import { getCapitalGains, columns } from "../services/capital-gains-provider";
 import TableTransactions from "src/components/TableTransactions.vue";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
@@ -46,8 +44,6 @@ export default {
       gainsGrouping: "Detailed",
       capitalGains: Object.freeze([]),
       columns,
-      $store: store,
-      $actions: actions,
     };
   },
   components: {
@@ -120,10 +116,10 @@ export default {
   },
   async created() {
     await this.load();
-    store.onload = this.load;
+    this.$store.onload = this.load;
   },
   unmounted() {
-    store.onload = null;
+    this.$store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageCapitalGains";

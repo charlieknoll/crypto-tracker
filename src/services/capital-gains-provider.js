@@ -14,10 +14,10 @@ async function getSellTxs(
   exchangeTransferFees
 ) {
   let sellTxs = chainTxs.filter(
-    tx => (tx.taxCode == "SPENDING" || tx.taxCode == "EXPENSE") && !tx.isError
+    (tx) => (tx.taxCode == "SPENDING" || tx.taxCode == "EXPENSE") && !tx.isError
   );
 
-  sellTxs = sellTxs.map(tx => {
+  sellTxs = sellTxs.map((tx) => {
     const sellTx = Object.assign({}, tx);
     sellTx.account = tx.fromName;
     sellTx.amount = tx.amount + tx.fee;
@@ -25,11 +25,23 @@ async function getSellTxs(
     sellTx.action = tx.taxCode;
     return sellTx;
   });
+  let giftTxs = chainTxs.filter(
+    (tx) => tx.taxCode == "GIFT" && !tx.isError && tx.fromName != "GENESIS"
+  );
+  giftTxs = giftTxs.map((tx) => {
+    const sellTx = Object.assign({}, tx);
+    sellTx.account = tx.fromName;
+    sellTx.amount = tx.amount;
+
+    sellTx.fee = tx.fee;
+    sellTx.action = tx.taxCode;
+    return sellTx;
+  });
   let _sellTokenTxs = tokenTxs.filter(
-    tx => tx.taxCode == "SELL" && tx.displayAmount != 0.0
+    (tx) => tx.taxCode == "SELL" && tx.displayAmount != 0.0
   );
   let feeTxs = chainTxs.filter(
-    tx =>
+    (tx) =>
       tx.fee > 0.0 &&
       tx.fromAccount.type == "Owned" &&
       ((tx.taxCode != "SPENDING" &&
@@ -38,14 +50,14 @@ async function getSellTxs(
         tx.isError)
   );
   //TODO filter out txs that have been used by token sell
-  feeTxs = feeTxs.filter(ftx => {
-    return _sellTokenTxs.findIndex(stx => stx.hash == ftx.hash) == -1;
+  feeTxs = feeTxs.filter((ftx) => {
+    return _sellTokenTxs.findIndex((stx) => stx.hash == ftx.hash) == -1;
   });
 
   //TODO Set action = TF:Token instead of Token Fee
   //TODO rename allocateTransferFee to allocateTokenFee
 
-  feeTxs = feeTxs.map(tx => {
+  feeTxs = feeTxs.map((tx) => {
     const feeTx = Object.assign({}, tx);
     feeTx.timestamp = tx.timestamp - 1;
     feeTx.amount = tx.ethGasFee;
@@ -65,7 +77,7 @@ async function getSellTxs(
     }
 
     if (feeTx.action == "TRANSFER FEE") {
-      const tokenTx = tokenTxs.find(tt => tt.hash == feeTx.hash);
+      const tokenTx = tokenTxs.find((tt) => tt.hash == feeTx.hash);
       if (tokenTx) {
         feeTx.action = "TF:" + tokenTx.asset;
       }
@@ -76,7 +88,7 @@ async function getSellTxs(
   //TODO add exchangeTransferFees to feeTxs with action: "TF:" + fee.currency
 
   feeTxs.push(...exchangeTransferFees);
-  let offChainFeeTxs = offchainTransfers.filter(tx => tx.transferFee != 0.0);
+  let offChainFeeTxs = offchainTransfers.filter((tx) => tx.transferFee != 0.0);
   const _offChainFeeTxs = [];
   for (const tx of offChainFeeTxs) {
     if (tx.transferFeeCurrency != "USD") {
@@ -90,7 +102,7 @@ async function getSellTxs(
     }
   }
 
-  _sellTokenTxs = _sellTokenTxs.map(tx => {
+  _sellTokenTxs = _sellTokenTxs.map((tx) => {
     const sellTx = Object.assign({}, tx);
     sellTx.account = tx.fromAccount.name;
     sellTx.amount = tx.displayAmount;
@@ -98,13 +110,15 @@ async function getSellTxs(
     return sellTx;
   });
 
+  //TODO WIP
+  sellTxs = sellTxs.concat(giftTxs);
   sellTxs = sellTxs.concat(feeTxs);
   sellTxs = sellTxs.concat(_offChainFeeTxs);
   sellTxs = sellTxs.concat(_sellTokenTxs);
-  sellTxs = sellTxs.concat(exchangeTrades.filter(tx => tx.action == "SELL"));
+  sellTxs = sellTxs.concat(exchangeTrades.filter((tx) => tx.action == "SELL"));
   //TODO add transfer fees to sell txs
 
-  sellTxs = sellTxs.map(tx => {
+  sellTxs = sellTxs.map((tx) => {
     tx.proceeds = tx.gross - tx.fee;
     tx.allocatedAmount = 0.0;
     tx.feeAllocatedAmount = 0.0;
@@ -119,8 +133,10 @@ async function getSellTxs(
 }
 function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
   //Create BUY txs
-  let buyTxs = chainTxs.filter(tx => tx.taxCode == "INCOME" && tx.amount > 0.0);
-  buyTxs = buyTxs.map(tx => {
+  let buyTxs = chainTxs.filter(
+    (tx) => tx.taxCode == "INCOME" && tx.amount > 0.0
+  );
+  buyTxs = buyTxs.map((tx) => {
     const buyTx = Object.assign({}, tx);
     buyTx.account = tx.fromName;
     buyTx.amount = tx.amount + tx.fee;
@@ -129,22 +145,22 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
   });
 
   let _buyTokenTxs = tokenTxs.filter(
-    tx =>
+    (tx) =>
       (tx.taxCode == "BUY" || tx.taxCode == "INCOME") && tx.displayAmount != 0.0
   );
-  _buyTokenTxs = _buyTokenTxs.map(tx => {
+  _buyTokenTxs = _buyTokenTxs.map((tx) => {
     const buyTx = Object.assign({}, tx);
     buyTx.account = tx.toAccount.name;
     buyTx.amount = tx.displayAmount;
     return buyTx;
   });
   buyTxs = buyTxs.concat(_buyTokenTxs);
-  let _buyExchangeTrades = exchangeTrades.filter(tx => tx.action == "BUY");
+  let _buyExchangeTrades = exchangeTrades.filter((tx) => tx.action == "BUY");
   buyTxs = buyTxs.concat(_buyExchangeTrades);
 
   buyTxs = buyTxs.concat(openingPositions);
 
-  buyTxs = buyTxs.map(tx => {
+  buyTxs = buyTxs.map((tx) => {
     tx.cost = tx.gross + tx.fee;
     tx.disposedAmount = 0.0;
     tx.adjDaysHeld = 0.0;
@@ -157,7 +173,7 @@ function getBuyTxs(chainTxs, tokenTxs, exchangeTrades, openingPositions) {
 function applyWashSale(tx, buyTxs, splitTxs) {
   //TODO find split txs for tx
   //skip splitTx's which have a gain
-  const _splitTxs = splitTxs.filter(st => {
+  const _splitTxs = splitTxs.filter((st) => {
     return st.sellTxId == tx.txId && st.gainOrLoss < 0.0;
   });
   //console.log(_splitTxs);
@@ -166,7 +182,7 @@ function applyWashSale(tx, buyTxs, splitTxs) {
   let washSaleAdj = 0.0;
   let washedAmount = 0.0;
   for (const st of _splitTxs) {
-    const washTxs = buyTxs.filter(bt => {
+    const washTxs = buyTxs.filter((bt) => {
       return (
         Math.abs(dayNum(bt.date) - tradeDate) <= 30 &&
         bt.disposedAmount < bt.amount &&
@@ -229,7 +245,7 @@ function applyWashSale(tx, buyTxs, splitTxs) {
 }
 function allocateProceeds(tx, buyTxs, splitTxs) {
   let buyTx = buyTxs.find(
-    btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
+    (btx) => btx.asset == tx.asset && btx.disposedAmount < btx.amount
   );
   //TODO adjust cost basis for fees from sale tx
   let i = 0;
@@ -279,13 +295,13 @@ function allocateProceeds(tx, buyTxs, splitTxs) {
     splitTxs.push(splitTx);
     i++;
     buyTx = buyTxs.find(
-      btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
+      (btx) => btx.asset == tx.asset && btx.disposedAmount < btx.amount
     );
   }
 }
 function allocateFee(tx, buyTxs) {
   let buyTx = buyTxs.find(
-    btx => btx.asset == tx.asset && btx.disposedAmount < btx.amount
+    (btx) => btx.asset == tx.asset && btx.disposedAmount < btx.amount
   );
   //TODO adjust cost basis for fees from sale tx
   let i = 0;
@@ -307,7 +323,7 @@ function allocateFee(tx, buyTxs) {
 
     i++;
     buyTx = buyTxs.find(
-      btx =>
+      (btx) =>
         btx.asset == tx.asset &&
         btx.disposedAmount < btx.amount &&
         btx.txId != buyTx.txId
@@ -315,7 +331,7 @@ function allocateFee(tx, buyTxs) {
   }
 }
 
-export const getCapitalGains = async function(includeWashSales) {
+export const getCapitalGains = async function (includeWashSales) {
   const chainTxs = await getChainTransactions();
   let tokenTxs = await getTokenTransactions();
   const exchangeTrades = await getExchangeTrades();
@@ -324,7 +340,7 @@ export const getCapitalGains = async function(includeWashSales) {
   const exchangeTransferFees =
     (await actions.getData("exchangeTransferFees")) ?? [];
 
-  tokenTxs = tokenTxs.filter(tx => tx.tracked);
+  tokenTxs = tokenTxs.filter((tx) => tx.tracked);
   let sellTxs = await getSellTxs(
     chainTxs,
     tokenTxs,
@@ -365,72 +381,72 @@ export const columns = [
     name: "date",
     label: "Date",
     field: "date",
-    align: "left"
+    align: "left",
   },
   {
     name: "timestamp",
     label: "Timestamp",
     field: "timestamp",
-    align: "left"
+    align: "left",
   },
   {
     name: "account",
     label: "Account",
     field: "account",
-    align: "left"
+    align: "left",
   },
   {
     name: "txId",
     label: "Id",
     field: "txId",
-    align: "left"
+    align: "left",
   },
   {
     name: "asset",
     label: "Asset",
     field: "asset",
-    align: "left"
+    align: "left",
   },
   {
     name: "action",
     label: "Action",
     field: "action",
-    align: "left"
+    align: "left",
   },
   {
     name: "amount",
     label: "Amount",
     field: "amount",
     align: "right",
-    format: (val, row) => formatDecimalNumber(val, 4)
+    format: (val, row) => formatDecimalNumber(val, 4),
   },
   {
     name: "fee",
     label: "Fee",
     field: "fee",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "gross",
     label: "Gross",
     field: "gross",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "proceeds",
     label: "Proceeds",
     field: "proceeds",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "shortTermGain",
     label: "Short Term Gain",
     field: "shortTermGain",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
 
   {
@@ -438,18 +454,18 @@ export const columns = [
     label: "Long Term Gain",
     field: "longTermGain",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "longLots",
     label: "L Lots",
     field: "longLots",
-    align: "right"
+    align: "right",
   },
   {
     name: "shortLots",
     label: "S Lots",
     field: "shortLots",
-    align: "right"
-  }
+    align: "right",
+  },
 ];

@@ -2,7 +2,7 @@
   <q-page class="" id="pageExchangeTransactions">
     <table-transactions
       :title="'Exchange Transactions - ' + $store.taxYear"
-      :data="filtered"
+      :rows="filtered"
       :columns="columns"
     >
       <template v-slot:top-right>
@@ -15,8 +15,6 @@
 </template>
 
 <script>
-import { store } from "../boot/store";
-import { actions } from "../boot/actions";
 import { columns, getExchangeTrades } from "../services/exchange-tx-provider";
 
 import TableTransactions from "src/components/TableTransactions.vue";
@@ -36,8 +34,6 @@ export default {
       columns,
       groupByDay: false,
       page: 1,
-      $store: store,
-      $actions: actions,
     };
   },
   computed: {
@@ -102,10 +98,10 @@ export default {
   },
   async created() {
     await this.load();
-    store.onload = this.load;
+    this.$store.onload = this.load;
   },
   unmounted() {
-    store.onload = null;
+    this.$store.onload = null;
   },
   mounted() {
     window.__vue_mounted = this.name;

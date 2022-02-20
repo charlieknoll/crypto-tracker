@@ -2,7 +2,7 @@
   <q-page class="" id="pageOffchainTransfers" ref="page">
     <table-transactions
       :title="'Offchain Transfers - ' + $store.taxYear"
-      :data="filtered"
+      :rows="filtered"
       :columns="columns"
     >
       <template v-slot:top-right>
@@ -14,8 +14,6 @@
 </template>
 
 <script>
-import { store } from "../boot/store";
-import { actions } from "../boot/actions";
 import { columns } from "../services/offchain-transfers-provider";
 import TableTransactions from "src/components/TableTransactions.vue";
 import FilterAccountAsset from "src/components/FilterAccountAsset.vue";
@@ -33,8 +31,6 @@ export default {
       offchainTransfers: Object.freeze([]),
       columns,
       page: 1,
-      $store: store,
-      $actions: actions,
     };
   },
   computed: {
@@ -69,10 +65,10 @@ export default {
   },
   async created() {
     await this.load();
-    store.onload = this.load;
+    this.$store.onload = this.load;
   },
   unmounted() {
-    store.onload = null;
+    this.$store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageOffchainTransfers";

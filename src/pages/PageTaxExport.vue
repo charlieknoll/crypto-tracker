@@ -1,6 +1,6 @@
 <template>
   <q-page class="" id="pageTaxExport">
-    <table-transactions title="Tax Export" :data="filtered" :columns="columns">
+    <table-transactions title="Tax Export" :rows="filtered" :columns="columns">
       <template v-slot:top-right>
         <div style="min-width: 250px; display: inline-block" class="q-mr-sm">
           <q-select
@@ -39,8 +39,6 @@
 </template>
 
 <script>
-import { store } from "../boot/store";
-import { actions } from "../boot/actions";
 import { getCapitalGains } from "../services/capital-gains-provider";
 import { columns, generate8949 } from "../services/tax-export-provider";
 import TableTransactions from "src/components/TableTransactions.vue";
@@ -55,8 +53,6 @@ export default {
       gainsGrouping: "Detailed",
       capitalGains: Object.freeze([]),
       columns,
-      $store: store,
-      $actions: actions,
     };
   },
   components: {
@@ -143,10 +139,10 @@ export default {
   },
   async created() {
     await this.load();
-    store.onload = this.load;
+    this.$store.onload = this.load;
   },
   unmounted() {
-    store.onload = null;
+    this.$store.onload = null;
   },
   mounted() {
     window.__vue_mounted = "PageTaxExport";

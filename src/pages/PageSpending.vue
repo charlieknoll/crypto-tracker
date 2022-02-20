@@ -2,7 +2,7 @@
   <q-page class="" id="pageSpending">
     <table-transactions
       :title="'Spending - ' + $store.taxYear"
-      :data="filtered"
+      :rows="filtered"
       :columns="columns"
     >
       <template v-slot:top-right>
