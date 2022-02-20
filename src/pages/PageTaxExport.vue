@@ -50,7 +50,7 @@ export default {
   data() {
     return {
       groups: ["Detailed", "Asset Totals", "Long/Short Totals"],
-      gainsGrouping: "Detailed",
+      gainsGrouping: "Long/Short Totals",
       capitalGains: Object.freeze([]),
       columns,
     };
@@ -117,11 +117,12 @@ export default {
   },
   methods: {
     async load() {
-      const { splitTxs } = await getCapitalGains(true);
+      const { splitTxs } = await getCapitalGains(false);
       const capitalGains = splitTxs;
       this.capitalGains = Object.freeze(splitTxs);
     },
     export8949() {
+      this.gainsGrouping = "Detailed";
       const content = generate8949(this.filtered);
       const status = exportFile(
         "8949-" + this.$store.taxYear + ".csv",

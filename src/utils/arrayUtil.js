@@ -1,4 +1,4 @@
-export const shuffle = function(arr) {
+export const shuffle = function (arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -21,31 +21,46 @@ function wrapCsvValue(val) {
 
   return `"${formatted}"`;
 }
-export const convertToCsv = function(arr, names, delimiter) {
+function convertCase(val, lowerCase) {
+  if (!lowerCase) return val;
+  return val[0].toLowerCase() + val.substring(1);
+}
+export const convertToCsv = function (
+  arr,
+  names,
+  delimiter,
+  lowerCaseProperties
+) {
   if (!delimiter) delimiter = ",";
-  const content = [names.map(n => wrapCsvValue(n)).join(delimiter)]
+  const content = [names.map((n) => wrapCsvValue(n)).join(delimiter)]
     .concat(
-      arr.map(val => names.map(name => wrapCsvValue(val[name])).join(delimiter))
+      arr.map((val) =>
+        names
+          .map((name) =>
+            wrapCsvValue(val[convertCase(name, lowerCaseProperties)])
+          )
+          .join(delimiter)
+      )
     )
     .join("\r\n");
   return content;
 };
-export const convertToCsvNoHeadher = function(arr, names, delimiter) {
+export const convertToCsvNoHeadher = function (arr, names, delimiter) {
   if (!delimiter) delimiter = ",";
   const content = arr
-    .map(val => names.map(name => val[name]).join(delimiter))
+    .map((val) => names.map((name) => val[name]).join(delimiter))
     .join("\r\n");
   return content;
 };
 
-export const commaStringToArray = function(val) {
+export const commaStringToArray = function (val) {
   let array = val.replaceAll(" ", "").split(",");
   if (array.length == 1 && array[0] == "") {
     array.pop();
   }
   return array;
 };
-export const commaStringToLowerCaseArray = function(val) {
+export const commaStringToLowerCaseArray = function (val) {
   const array = commaStringToArray(val);
-  return array.map(v => (v ?? "").toLowerCase());
+  return array.map((v) => (v ?? "").toLowerCase());
 };

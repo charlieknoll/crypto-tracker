@@ -75,11 +75,11 @@ function processAllDataFile(content) {
     backup.prices.length
   );
 }
-export const processFile = function (name, content) {
+export const processFile = async function (name, content) {
   store.updated = true;
   //TODO route file to proper processor
   if (name.substring(0, 5) == "openi") {
-    return processOpeningPositionsFile(content);
+    return await processOpeningPositionsFile(content);
   }
   if (name.substring(0, 5) == "trade") {
     return processExchangeTradesFile(content);
@@ -122,10 +122,10 @@ function updateNotif(notif, message, iconName) {
 export const processFiles = async function (fileArray, cb) {
   const reader = new FileReader();
   let currentFileName = null;
-  reader.onload = function (event) {
+  reader.onload = async function (event) {
     const notif = showNotify(currentFileName);
     try {
-      const result = processFile(
+      const result = await processFile(
         currentFileName,
         atob(event.target.result.split("base64,")[1])
       );

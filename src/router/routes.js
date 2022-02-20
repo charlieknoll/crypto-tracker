@@ -74,6 +74,11 @@ const routes = [
         component: () => import("pages/PageTaxExport.vue"),
       },
       {
+        name: "Gift Export",
+        path: "gift-export",
+        component: () => import("pages/PageGiftExport.vue"),
+      },
+      {
         name: "Backup",
         path: "backup",
         component: () => import("pages/PageBackup.vue"),

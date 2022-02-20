@@ -3,7 +3,7 @@ import { actions } from "../boot/actions";
 import { getPrice } from "./price-provider";
 import { floatToMoney } from "../utils/moneyUtils";
 import { LocalStorage } from "quasar";
-import { parse } from "csv/browser/esm";
+import { parse } from "csv-parse/browser/esm/sync";
 
 export const processExchangeTradesFile = function (data) {
   const stagedData = parse(data, {

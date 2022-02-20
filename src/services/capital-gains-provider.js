@@ -6,6 +6,7 @@ import { getPrice } from "./price-provider";
 import { formatCurrency, formatDecimalNumber } from "../utils/moneyUtils";
 import { dayNum } from "../utils/dateUtils";
 import { toUtf8Bytes } from "@ethersproject/strings";
+import { commaStringToArray } from "src/utils/arrayUtil";
 async function getSellTxs(
   chainTxs,
   tokenTxs,
@@ -266,10 +267,19 @@ function allocateProceeds(tx, buyTxs, splitTxs) {
         60 /
         24 +
       buyTx.adjDaysHeld;
-    const gain =
+    let gain =
       (allocatedAmount / tx.amount) * tx.proceeds -
       (allocatedAmount / buyTx.amount) * buyTx.cost;
-
+    let proceeds = (allocatedAmount / tx.amount) * tx.proceeds;
+    let costBasis = (allocatedAmount / buyTx.amount) * buyTx.cost;
+    let realizedType = "";
+    let fee = 0.0;
+    if (tx.action == "GIFT") {
+      gain = 0.0;
+      proceeds = 0.0;
+      fee = tx.fee * (allocatedAmount / tx.amount);
+      realizedType = "GIFT";
+    }
     if (daysHeld > 365) {
       tx.longTermGain += gain;
       tx.longLots += 1;
@@ -285,11 +295,17 @@ function allocateProceeds(tx, buyTxs, splitTxs) {
     splitTx.dateAcquired = buyTx.date;
     splitTx.allocatedTxId = buyTx.txId;
     splitTx.sellTxId = tx.txId;
+    splitTx.txId = tx.txId;
     splitTx.daysHeld = daysHeld;
     splitTx.date = tx.date;
     splitTx.amount = allocatedAmount;
-    splitTx.proceeds = (allocatedAmount / tx.amount) * tx.proceeds;
-    splitTx.costBasis = (allocatedAmount / buyTx.amount) * buyTx.cost;
+    splitTx.proceeds = proceeds;
+    splitTx.cost = costBasis;
+    splitTx.fee = fee;
+    splitTx.price = costBasis / allocatedAmount;
+    splitTx.costBasis = fee + splitTx.cost;
+    splitTx.toName = tx.toName;
+    splitTx.realizedType = realizedType;
     splitTx.gainOrLoss = gain;
     splitTx.washSaleAdj = 0.0;
     splitTxs.push(splitTx);
@@ -331,7 +347,7 @@ function allocateFee(tx, buyTxs) {
   }
 }
 
-export const getCapitalGains = async function (includeWashSales) {
+async function getAllocatedTxs(includeWashSales) {
   const chainTxs = await getChainTransactions();
   let tokenTxs = await getTokenTransactions();
   const exchangeTrades = await getExchangeTrades();
@@ -375,7 +391,24 @@ export const getCapitalGains = async function (includeWashSales) {
     }
   }
   return { sellTxs, splitTxs };
+}
+export const getCapitalGains = async function (applyWashSale) {
+  const allocatedTxs = await getAllocatedTxs(applyWashSale);
+  const sellTxs = allocatedTxs.sellTxs.filter((tx) => tx.action != "GIFT");
+  const splitTxs = allocatedTxs.splitTxs.filter(
+    (tx) => tx.realizedType != "GIFT"
+  );
+  return { sellTxs, splitTxs };
 };
+export const getGiftOpeningPositions = async function () {
+  const allocated = await getAllocatedTxs(false);
+  const openingPositions = allocated.splitTxs.filter(
+    (tx) => tx.realizedType == "GIFT"
+  );
+
+  return openingPositions;
+};
+
 export const columns = [
   {
     name: "date",

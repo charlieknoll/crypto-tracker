@@ -163,8 +163,14 @@ const menuList = [
   {
     icon: "mdi-database-arrow-down",
     label: "Tax Export",
-    separator: true,
+    separator: false,
     to: "/tax-export",
+  },
+  {
+    icon: "mdi-database-arrow-down",
+    label: "Gift Export",
+    separator: true,
+    to: "/gift-export",
   },
   {
     icon: "mdi-cog",

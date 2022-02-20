@@ -1,9 +1,10 @@
 import { ethers } from "ethers";
 import { actions } from "../boot/actions";
 
-import { parse } from "csv/browser/esm";
+//const csv = require("csv/browser/esm");
 
-export const processOpeningPositionsFile = function (openingData) {
+import { parse } from "csv-parse/browser/esm/sync";
+export const processOpeningPositionsFile = async function (openingData) {
   const stageOpeningData = parse(openingData, {
     trim: true,
     columns: true,
