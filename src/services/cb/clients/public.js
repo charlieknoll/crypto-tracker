@@ -1,8 +1,8 @@
-const request = require("request");
+import axios from "axios";
 const { Readable } = require("stream");
 const DEFAULT_TIMEOUT = 10 * 1000; // 10 sec
 //import axios from "axios";
-class PublicClient {
+export class PublicClient {
   constructor(apiURI = "https://api.pro.coinbase.com", options = {}) {
     this.productID = "BTC-USD";
     if (apiURI && !apiURI.startsWith("http")) {
@@ -37,9 +37,9 @@ class PublicClient {
     return Object.assign(
       obj.headers,
       {
-        "User-Agent": "coinbase-pro-node-client",
+        // "User-Agent": "coinbase-pro-node-client",
         Accept: "application/json",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       additional
     );
@@ -106,22 +106,23 @@ class PublicClient {
       method: method.toUpperCase(),
       uri: this.makeAbsoluteURI(this.makeRelativeURI(uriParts)),
       qsStringifyOptions: { arrayFormat: "repeat" },
-      timeout: this.timeout
+      timeout: this.timeout,
     });
     this.addHeaders(opts);
     // const p = new Promise((resolve, reject) => {
     //   request(opts, this.makeRequestCallback(callback, resolve, reject));
     // });
     const p = new Promise((resolve, reject) => {
-      request(opts, this.makeRequestCallback(callback, resolve, reject));
-      // axios
-      //   .get(opts.uri, "", opts.headers)
-      //   .then(function(data) {
-      //     resolve(data);
-      //   })
-      //   .catch(function(error) {
-      //     reject(error);
-      //   });
+      opts.url = opts.uri;
+      opts.params = opts.qs;
+      //request(opts, this.makeRequestCallback(callback, resolve, reject));
+      axios(opts.uri, opts)
+        .then(function (response) {
+          resolve(response.data);
+        })
+        .catch(function (error) {
+          reject(error);
+        });
     });
     if (callback) {
       p.catch(() => {});
@@ -316,6 +317,4 @@ class PublicClient {
   }
 }
 
-const byType = type => o => o !== null && typeof o === type;
-
-module.exports = exports = PublicClient;
+const byType = (type) => (o) => o !== null && typeof o === type;

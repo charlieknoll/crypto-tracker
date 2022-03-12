@@ -6,8 +6,8 @@ import getMethodName from "./methods";
 import { LocalStorage } from "quasar";
 import { weiToMoney, bnToFloat, formatCurrency } from "src/utils/moneyUtils";
 
-export const ChainTransaction = function() {
-  this.init = async function(tx) {
+export const ChainTransaction = function () {
+  this.init = async function (tx) {
     this.toAccount = actions.addImportedAddress({ address: tx.to });
     this.fromAccount = actions.addImportedAddress({ address: tx.from });
     this.hash = tx.hash.toLowerCase();
@@ -68,11 +68,14 @@ export const ChainTransaction = function() {
             BigNumber.from(tx.gasUsed).mul(BigNumber.from(tx.gasPrice)),
             this.price
           );
-
+    if (this.fromAccount.type.includes("Exchange Owned")) {
+      this.fee = 0.0;
+      this.ethGasFee = 0.0;
+    }
     return this;
   };
 };
-export const getChainTransactions = async function() {
+export const getChainTransactions = async function () {
   const data = LocalStorage.getItem("chainTransactions") ?? [];
   actions.refreshStoreData("addresses");
   const internalTransactions =
@@ -101,65 +104,65 @@ export const columns = [
     name: "date",
     label: "Date",
     field: "date",
-    align: "left"
+    align: "left",
   },
   {
     name: "txId",
     label: "Id",
     field: "txId",
-    align: "left"
+    align: "left",
   },
   {
     name: "from",
     label: "From",
     field: "fromName",
-    align: "left"
+    align: "left",
   },
   {
     name: "to",
     label: "To",
     field: "toName",
-    align: "left"
+    align: "left",
   },
   {
     name: "method",
     label: "Method",
     field: "methodName",
-    align: "left"
+    align: "left",
   },
   {
     name: "taxCode",
     label: "Tax Code",
     field: "taxCode",
-    align: "left"
+    align: "left",
   },
   {
     name: "amount",
     label: "Amount",
     field: "amount",
     align: "right",
-    format: (val, row) => `${(parseFloat(val) ?? 0.0).toFixed(4)}`
+    format: (val, row) => `${(parseFloat(val) ?? 0.0).toFixed(4)}`,
   },
   {
     name: "price",
     label: "ETH Price",
     field: "price",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "fee",
     label: "Fee",
     field: "fee",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "gross",
     label: "Gross",
     field: "gross",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "error",
@@ -167,6 +170,6 @@ export const columns = [
     field: "isError",
     align: "left",
     format: (val, row) => `${val ? "ERROR" : ""}`,
-    style: "color: red; font-weight: bold;"
-  }
+    style: "color: red; font-weight: bold;",
+  },
 ];

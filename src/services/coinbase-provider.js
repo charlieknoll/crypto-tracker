@@ -2,7 +2,7 @@ import { store } from "../boot/store";
 import { actions } from "../boot/actions";
 import { throttle } from "../utils/cacheUtils";
 
-//import AuthenticatedClient from "./cb/clients/authenticated";
+import { AuthenticatedClient } from "./cb/clients/authenticated";
 import { Notify } from "quasar";
 import { getPrice } from "./price-provider";
 let lastRequestTime = 0;

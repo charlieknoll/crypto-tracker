@@ -1,8 +1,7 @@
 const { signRequest } = require("../request_signer");
+import { PublicClient } from "./public";
 
-const PublicClient = require("./public.js");
-
-class AuthenticatedClient extends PublicClient {
+export class AuthenticatedClient extends PublicClient {
   constructor(key, secret, passphrase, apiURI, options = {}) {
     super(apiURI, options);
     this.key = key;
@@ -38,7 +37,7 @@ class AuthenticatedClient extends PublicClient {
       "CB-ACCESS-KEY": sig.key,
       "CB-ACCESS-SIGN": sig.signature,
       "CB-ACCESS-TIMESTAMP": sig.timestamp,
-      "CB-ACCESS-PASSPHRASE": sig.passphrase
+      "CB-ACCESS-PASSPHRASE": sig.passphrase,
     };
   }
 
@@ -166,7 +165,7 @@ class AuthenticatedClient extends PublicClient {
           }
         });
       })
-        .then(values => {
+        .then((values) => {
           let [response, data] = values;
           totalDeletedOrders.push(...data);
           if (data.length) {
@@ -175,13 +174,13 @@ class AuthenticatedClient extends PublicClient {
             return response;
           }
         })
-        .then(response => {
+        .then((response) => {
           if (callback) {
             callback(undefined, response, totalDeletedOrders);
           }
           return totalDeletedOrders;
         })
-        .catch(err => {
+        .catch((err) => {
           if (callback) {
             callback(err);
           }
@@ -241,7 +240,7 @@ class AuthenticatedClient extends PublicClient {
       "margin_profile_id",
       "type",
       "currency",
-      "amount"
+      "amount",
     ]);
     return this.post(["profiles/margin-transfer"], { body: params }, callback);
   }
@@ -269,9 +268,9 @@ class AuthenticatedClient extends PublicClient {
   depositCrypto(params, callback) {
     this._requireParams(params, ["currency"]);
     return this.getCoinbaseAccounts()
-      .then(coinbaseAccounts => {
+      .then((coinbaseAccounts) => {
         let account = coinbaseAccounts.find(
-          a => a.currency === params.currency
+          (a) => a.currency === params.currency
         );
         return this.post(
           ["coinbase-accounts", account.id, "addresses"],
@@ -334,5 +333,3 @@ class AuthenticatedClient extends PublicClient {
     return this.get(["reports", reportId], callback);
   }
 }
-
-module.exports = exports = AuthenticatedClient;

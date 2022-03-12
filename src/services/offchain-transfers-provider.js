@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { actions } from "../boot/actions";
 
-import { parse } from "csv/browser/esm";
+import { parse } from "csv-parse/browser/esm/sync";
 
 export const processOffchainTransfersFile = function (tranfers) {
   const stageTransfers = parse(tranfers, {

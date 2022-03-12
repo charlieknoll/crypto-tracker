@@ -72,6 +72,14 @@ module.exports = configure(function (ctx) {
       //     })
       //   );
       // },
+      extendWebpack(cfg) {
+        cfg.resolve.fallback = {
+          crypto: require.resolve("crypto-browserify"),
+          querystring: require.resolve("querystring-es3"),
+          buffer: require.resolve("buffer/"),
+          stream: require.resolve("readable-stream"),
+        };
+      },
       // https://quasar.dev/quasar-cli/handling-webpack
       chainWebpack(chain) {
         chain
@@ -79,8 +87,8 @@ module.exports = configure(function (ctx) {
           .use(ESLintPlugin, [{ extensions: ["js", "vue"] }]);
         // const nodePolyfillWebpackPlugin = require("node-polyfill-webpack-plugin");
         // chain.plugin("node-polyfill").use(nodePolyfillWebpackPlugin);
-        // const Buffer = require("buffer/").Buffer;
-        // chain.plugin("buffer").use(Buffer);
+        //const Buffer = require("buffer/").Buffer;
+        //chain.plugin("buffer").use(Buffer);
       },
     },
 

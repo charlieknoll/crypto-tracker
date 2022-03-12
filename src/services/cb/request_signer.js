@@ -2,7 +2,7 @@
 const crypto = require("crypto");
 const querystring = require("querystring");
 const Utils = require("./utilities.js");
-
+const Buffer = require("buffer").Buffer;
 /**
  Signs request messages for authenticated requests to Coinbase Pro
  * @param auth {object} hash containing key, secret and passphrase
@@ -24,6 +24,7 @@ module.exports.signRequest = (auth, method, path, options = {}) => {
   }
   const what = timestamp + method.toUpperCase() + path + body;
   const key = Buffer.from(auth.secret, "base64");
+  var Transform = require("stream").Transform;
   const hmac = crypto.createHmac("sha256", key);
   const signature = hmac.update(what).digest("base64");
   return {

@@ -293,13 +293,13 @@ export const columns = [
     label: "Running Acct Balance",
     field: "runningAccountBalance",
     align: "right",
-    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`,
+    format: (val, row) => `${(val ?? 0.0).toFixed(12)}`,
   },
   {
     name: "runningBalance",
     label: "Running Balance",
     field: "runningBalance",
     align: "right",
-    format: (val, row) => `${(val ?? 0.0).toFixed(4)}`,
+    format: (val, row) => `${(val ?? 0.0).toFixed(12)}`,
   },
 ];
