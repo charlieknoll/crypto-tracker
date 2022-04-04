@@ -16,10 +16,14 @@ export const getRunningBalances = async function (store) {
     (await actions.getData("exchangeTransferFees")) ?? [];
 
   for (const tx of openingPositions) {
+    let account = tx.account;
+    if (account.includes("->")) {
+      account = account.split("->")[1];
+    }
     mappedData.push({
       txId: "opening-" + tx.txId,
       timestamp: tx.timestamp,
-      account: tx.account,
+      account,
       date: tx.date,
       amount: tx.amount,
       asset: tx.asset,
@@ -52,6 +56,8 @@ export const getRunningBalances = async function (store) {
   }
   for (const tx of chainTransactions) {
     if (tx.fromName == "GENESIS") continue;
+    if (tx.fromAccount.type == "Gift") continue;
+
     if (tx.toAccount.type.toLowerCase().includes("owned")) {
       mappedData.push({
         txId: "Ch-I-" + tx.txId,

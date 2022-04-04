@@ -1,127 +1,131 @@
 const methodIds = [
   {
     id: "0xb6b55f25",
-    name: "deposit"
+    name: "deposit",
   },
   {
     id: "0x095ea7b3",
-    name: "approve"
+    name: "approve",
   },
   {
     id: "0x029b2f34",
-    name: "add_liquidity"
+    name: "add_liquidity",
   },
   {
     id: "0x7d49d875",
-    name: "remove_liquidity"
+    name: "remove_liquidity",
   },
   {
     id: "0x2e1a7d4d",
-    name: "withdraw"
+    name: "withdraw",
   },
   {
     id: "0xa6417ed6",
-    name: "exchange_underlying"
+    name: "exchange_underlying",
   },
   {
     id: "0xa9059cbb",
-    name: "transfer"
+    name: "transfer",
   },
   {
     id: "0x029b2f34",
-    name: "add_liquidity"
+    name: "add_liquidity",
   },
   {
     id: "0xab832b43",
-    name: "grant"
+    name: "grant",
   },
   {
     id: "0x1e83409a",
-    name: "claim"
+    name: "claim",
   },
   {
     id: "0x6a627842",
-    name: "mint"
+    name: "mint",
   },
   {
     id: "0x65fc3873",
-    name: "create_lock"
+    name: "create_lock",
   },
   {
     id: "0xd7136328",
-    name: "vote_for_gauge_weights"
+    name: "vote_for_gauge_weights",
   },
   {
     id: "0x3ccfd60b",
-    name: "withdraw"
+    name: "withdraw",
   },
   {
     id: "0x3ccfd60b",
-    name: "withdraw"
+    name: "withdraw",
   },
   {
     id: "0x3ccfd60b",
-    name: "withdraw"
+    name: "withdraw",
   },
   {
     id: "0x983b94fb",
-    name: "finalizeAuction"
+    name: "finalizeAuction",
   },
   {
     id: "0x1896f70a",
-    name: "setResolver"
+    name: "setResolver",
   },
   {
     id: "0x0230a07c",
-    name: "releaseDeed"
+    name: "releaseDeed",
   },
   {
     id: "0xe8d6dbb4",
-    name: "renewAll"
+    name: "renewAll",
   },
   {
     id: "0xb4427263",
-    name: "createTokens"
+    name: "createTokens",
   },
   {
     id: "0xacfdfd1c",
-    name: "deploy"
+    name: "deploy",
   },
   {
     id: "0xce92dced",
-    name: "newBid"
+    name: "newBid",
   },
   {
     id: "0x47872b42",
-    name: "unsealBid"
+    name: "unsealBid",
   },
   {
     id: "0xede8acdb",
-    name: "startAuction"
+    name: "startAuction",
   },
   {
     id: "0xfebefd61",
-    name: "startAuctionsAndBid"
+    name: "startAuctionsAndBid",
   },
   {
     id: "0xacf1a841",
-    name: "renew"
+    name: "renew",
   },
   {
     id: "0x2b6e993a",
-    name: "add_liquidity"
+    name: "add_liquidity",
   },
   {
     id: "0x4e71d92d",
-    name: "claim"
+    name: "claim",
   },
   {
     id: "0x9fdaea0c",
-    name: "remove_liquidity_imbalance"
-  }
+    name: "remove_liquidity_imbalance",
+  },
+  {
+    id: "0x9e5167e5",
+    name: "claimTokens",
+  },
 ];
 export default function getMethodName(input) {
   if (input == "0x") return "";
-  const methodId = methodIds.find(m => m.id === input.substring(0, 10));
+  const methodId = methodIds.find((m) => m.id === input.substring(0, 10));
   return methodId ? methodId.name : "";
 }

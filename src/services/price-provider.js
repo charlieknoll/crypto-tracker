@@ -7,24 +7,25 @@ const coinGeckoSymbolMap = {};
 coinGeckoSymbolMap["BTC"] = "bitcoin";
 coinGeckoSymbolMap["ETH"] = "ethereum";
 coinGeckoSymbolMap["CRV"] = "curve-dao-token";
+coinGeckoSymbolMap["GTC"] = "gitcoin";
 let lastRequestTime = 0;
 let requests = [];
-export const getPrice = async function(symbol, tradeDate) {
+export const getPrice = async function (symbol, tradeDate) {
   const prices = actions.getData("prices") ?? [];
   const tradeDatePrice = prices.find(
-    p => p.symbol == symbol && p.tradeDate == tradeDate
+    (p) => p.symbol == symbol && p.tradeDate == tradeDate
   );
 
   if (tradeDatePrice) {
     return tradeDatePrice.price;
   }
-  if (actions.getBaseCurrencies().find(bc => bc == symbol)) {
+  if (actions.getBaseCurrencies().find((bc) => bc == symbol)) {
     return 1.0;
   }
   //Get price from Coingecko
   if (!coinGeckoSymbolMap[symbol]) {
     //TODO add to coingecko symbol list without coinid, auto lookup?
-    //console.error("Symbol not found: " + symbol);
+    console.error("Symbol not found: " + symbol);
 
     return 0.0;
   }
@@ -37,7 +38,7 @@ export const getPrice = async function(symbol, tradeDate) {
   requests.push(lastRequestTime); //100req's per minute
   const currentTime = new Date().getTime();
   //requests in last 60
-  requests = requests.filter(r => r > currentTime - 60000);
+  requests = requests.filter((r) => r > currentTime - 60000);
   if (requests.length > 50) {
     await throttle(currentTime, 1000);
   }
@@ -55,7 +56,7 @@ export const getPrice = async function(symbol, tradeDate) {
         prices.push({
           symbol,
           tradeDate,
-          price
+          price,
         });
         actions.setData("prices", prices);
         actions.setObservableData("pricesNeedsBackup", true);
