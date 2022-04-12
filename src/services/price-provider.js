@@ -8,6 +8,8 @@ coinGeckoSymbolMap["BTC"] = "bitcoin";
 coinGeckoSymbolMap["ETH"] = "ethereum";
 coinGeckoSymbolMap["CRV"] = "curve-dao-token";
 coinGeckoSymbolMap["GTC"] = "gitcoin";
+coinGeckoSymbolMap["BNB"] = "binancecoin";
+coinGeckoSymbolMap["EPS"] = "ellipsis";
 let lastRequestTime = 0;
 let requests = [];
 export const getPrice = async function (symbol, tradeDate) {
@@ -22,10 +24,17 @@ export const getPrice = async function (symbol, tradeDate) {
   if (actions.getBaseCurrencies().find((bc) => bc == symbol)) {
     return 1.0;
   }
+  //manual overrides
+  if (symbol == "3Crv" && tradeDate == "2021-04-29") {
+    return 1.01;
+  }
+  if (symbol == "3Crv" && tradeDate == "2021-06-07") {
+    return 1.01;
+  }
   //Get price from Coingecko
   if (!coinGeckoSymbolMap[symbol]) {
     //TODO add to coingecko symbol list without coinid, auto lookup?
-    console.error("Symbol not found: " + symbol);
+    //console.error("Symbol not found: " + symbol);
 
     return 0.0;
   }

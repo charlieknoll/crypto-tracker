@@ -11,30 +11,33 @@ Track your crypto capital gains
 - Setup USD pegged token codes
 - Export csv list of trades, income and spending
 
-
 ## Install the dependencies
+
 ```bash
 npm install
 ```
 
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
+
 ```bash
 quasar dev
 ```
 
 ### Lint the files
+
 ```bash
 npm run lint
 ```
 
 ### Build the app for production
+
 ```bash
 quasar build
 ```
 
 ### Customize the configuration
-See [Configuring quasar.conf.js](https://quasar.dev/quasar-cli/quasar-conf-js).
 
+See [Configuring quasar.conf.js](https://quasar.dev/quasar-cli/quasar-conf-js).
 
 ## State strategy
 
@@ -48,7 +51,7 @@ https://www.cointracker.io/blog/defi-yield-farming-crypto-tax-guide
 
 https://coinpanda.io/blog/cryptocurrency-staking-taxes/
 
-To use the tool:
+### Using the Tool
 
 - Add an owned account on the "Addresses" page
 - Import account and token transactions on the "Import" page
@@ -56,3 +59,7 @@ To use the tool:
 - Assign names and account types to the "Unnamed Accounts" - it is helpful to open the apps in 2 tabs, one with "Accounts" page open and one with "Chain Transactions" page open
 - Ctrl+click to open the Chain Transaction on etherscan
 - It is important to set the account type for tax classification purposes
+
+### Get prices for outdated or untracked coins
+
+- Add code the price-provider to return hardcoded price, e.g. 2021-04-29 3Crv = 1.01

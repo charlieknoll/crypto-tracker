@@ -234,9 +234,9 @@ export default {
     },
   },
   async mounted() {
-    // if (this.$store.updated) {
-    //   await getRunningBalances(this.$store);
-    // }
+    if (this.$store.updated) {
+      await getRunningBalances(this.$store);
+    }
   },
 };
 </script>

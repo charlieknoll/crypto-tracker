@@ -41,8 +41,8 @@ function setBaseCurrencySwapTxGross(pt) {
   const ptGross = pt.usdProceeds > pt.usdSpent ? pt.usdSpent : pt.usdProceeds;
   const txSet =
     pt.usdProceeds > pt.usdSpent
-      ? pt.inTokenTxs.filter(inTx => !inTx.amount.eq(0))
-      : pt.outTokenTxs.filter(outTx => !outTx.amount.eq(0));
+      ? pt.inTokenTxs.filter((inTx) => !inTx.amount.eq(0))
+      : pt.outTokenTxs.filter((outTx) => !outTx.amount.eq(0));
   for (const tx of txSet) {
     tx.fee += (additionalFee * tx.gross) / ptGross;
     //console.log("base currency tx:", tx);
@@ -63,7 +63,7 @@ function setImpliedGrossAndPrices(parentGross, txSet) {
     ///if (!tx.tracked) continue;
     tokenPrices.unshift({
       symbol: tx.asset,
-      price: tx.price
+      price: tx.price,
     });
   }
 }
@@ -71,8 +71,8 @@ function setBaseCurrencyTokenTxGross(pt) {
   //TODO handle baseCurrency on both sides
   const nonBaseTxs =
     pt.usdProceeds !== 0.0
-      ? pt.inTokenTxs.filter(inTx => !inTx.amount.eq(0))
-      : pt.outTokenTxs.filter(outTx => !outTx.amount.eq(0));
+      ? pt.inTokenTxs.filter((inTx) => !inTx.amount.eq(0))
+      : pt.outTokenTxs.filter((outTx) => !outTx.amount.eq(0));
   const parentGross = pt.usdProceeds == 0.0 ? pt.usdSpent : pt.usdProceeds;
 
   setImpliedGrossAndPrices(parentGross, nonBaseTxs);
@@ -82,15 +82,15 @@ async function setImpliedTxGross(pt) {
   //TODO handle price lookups
   //first look for sell in recent prices, if not then buy
   const outTxs = pt.outTokenTxs.filter(
-    outTx => !outTx.amount.eq(0) && outTx.tracked
+    (outTx) => !outTx.amount.eq(0) && outTx.tracked
   );
   let pricesMapped = true;
   for (const tx of outTxs) {
-    tx.tokenPrice = tokenPrices.find(tp => tp.symbol == tx.asset);
+    tx.tokenPrice = tokenPrices.find((tp) => tp.symbol == tx.asset);
     if (!tx.tokenPrice) {
       tx.tokenPrice = {
         price: await getPrice(tx.asset, tx.date.substring(2, 10)),
-        symbol: tx.asset
+        symbol: tx.asset,
       };
     }
     pricesMapped = pricesMapped && tx.tokenPrice;
@@ -103,7 +103,7 @@ async function setImpliedTxGross(pt) {
   }
   setImpliedGrossAndPrices(
     parentGross,
-    pt.inTokenTxs.filter(tx => !tx.amount.eq(0))
+    pt.inTokenTxs.filter((tx) => !tx.amount.eq(0))
   );
 }
 function setGross(pt) {
@@ -119,21 +119,21 @@ function setGross(pt) {
 }
 
 function TokenTransaction() {
-  this.initParentTransaction = async function(parentTxs) {
+  this.initParentTransaction = async function (parentTxs) {
     //set parent transaction
-    this.parentTx = parentTxs.find(pt => pt.hash == this.hash);
+    this.parentTx = parentTxs.find((pt) => pt.hash == this.hash);
     if (!this.parentTx) {
       //TODO trigger download from etherscan
       this.parentTx = { hash: this.hash };
       _initParentTransaction(this.parentTx);
     }
   };
-  this.initTokenTx = async function(baseCurrencies, trackedTokens) {
+  this.initTokenTx = async function (baseCurrencies, trackedTokens) {
     //TODO Clean this up and correctly set spent and proceeds
 
     this.methodName = this.parentTx.methodName;
 
-    this.tracked = trackedTokens.findIndex(asset => asset == this.asset) > -1;
+    this.tracked = trackedTokens.findIndex((asset) => asset == this.asset) > -1;
 
     if (!this.toAccount.type || !this.fromAccount.type) {
       this.taxCode = "UNKNOWN ADDR";
@@ -141,7 +141,7 @@ function TokenTransaction() {
     }
     this.gross = 0.0;
     this.marketGross = 0.0;
-    if (baseCurrencies.find(c => c == this.asset.toUpperCase())) {
+    if (baseCurrencies.find((c) => c == this.asset.toUpperCase())) {
       this.gross = bnToFloat(this.amount, this.tokenDecimal);
       this.price = 1.0;
     } else if (this.tracked) {
@@ -199,10 +199,11 @@ function TokenTransaction() {
       this.parentTx.otherTokenTxs.length;
     this.txId = this.hash.substring(2, 8) + "-" + this.seqNo;
   };
-  this.init = async function(tx) {
-    this.toAccount = actions.addImportedAddress({ address: tx.to });
-    this.fromAccount = actions.addImportedAddress({ address: tx.from });
+  this.init = async function (tx, chain) {
+    this.toAccount = actions.getAccount(tx.to);
+    this.fromAccount = actions.getAccount(tx.from);
     this.asset = tx.tokenSymbol;
+    this.gasType = tx.gasType;
     this.tokenDecimal = tx.tokenDecimal;
     this.hash = tx.hash.toLowerCase();
     this.toName = this.toAccount.name;
@@ -222,19 +223,19 @@ function TokenTransaction() {
     }
     this.timestamp = parseInt(tx.timeStamp);
     this.date = new Date(this.timestamp * 1000).toISOString().slice(0, 10);
-    let ethPrice = await getPrice("ETH", this.date);
+    let gasPrice = await getPrice(tx.gasType, this.date);
     this.fee =
       Math.round(
         ethers.utils.formatEther(
           BigNumber.from(tx.gasUsed)
             .mul(BigNumber.from(tx.gasPrice))
-            .mul(BigNumber.from(Math.round(parseFloat(ethPrice)) * 100))
+            .mul(BigNumber.from(Math.round(parseFloat(gasPrice)) * 100))
         )
       ) / 100;
   };
 }
 
-export const getTokenTransactions = async function() {
+export const getTokenTransactions = async function () {
   //build tx list
   //fields: tx-seqno, timestamp, short date fee, ethprice, token, action, realized short term gain, realized long term gain,
   //cost basis
@@ -265,7 +266,7 @@ export const getTokenTransactions = async function() {
       tokenTx.asset &&
       !tokenTx.asset.includes("tinyurl")
     ) {
-      if (trackedTokens.findIndex(tt => tt == tokenTx.asset) == -1) {
+      if (trackedTokens.findIndex((tt) => tt == tokenTx.asset) == -1) {
         trackedTokens.push(tokenTx.asset);
       }
     }
@@ -292,69 +293,69 @@ export const columns = [
     name: "date",
     label: "Date",
     field: "date",
-    align: "left"
+    align: "left",
   },
   {
     name: "txId",
     label: "Id",
     field: "txId",
-    align: "left"
+    align: "left",
   },
   {
     name: "from",
     label: "From",
     field: "fromName",
-    align: "left"
+    align: "left",
   },
   {
     name: "to",
     label: "To",
     field: "toName",
-    align: "left"
+    align: "left",
   },
   {
     name: "asset",
     label: "Token",
     field: "asset",
-    align: "left"
+    align: "left",
   },
   {
     name: "methodName",
     label: "Method",
     field: "methodName",
-    align: "left"
+    align: "left",
   },
   {
     name: "taxCode",
     label: "Tax Code",
     field: "taxCode",
-    align: "left"
+    align: "left",
   },
   {
     name: "amount",
     label: "Amount",
     field: "displayAmount",
-    align: "right"
+    align: "right",
   },
   {
     name: "price",
     label: "Price",
     field: "price",
     align: "right",
-    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`
+    format: (val, row) => `$${val ? parseFloat(val).toFixed(2) : "0.00"}`,
   },
   {
     name: "gross",
     label: "Gross",
     field: "gross",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
+    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`,
   },
   {
     name: "fee",
     label: "Fee",
     field: "fee",
     align: "right",
-    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`
-  }
+    format: (val, row) => `$${(val ?? 0.0).toFixed(2)}`,
+  },
 ];

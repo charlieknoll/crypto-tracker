@@ -65,7 +65,7 @@ export const getRunningBalances = async function (store) {
         account: tx.toAccount.name,
         date: tx.date,
         amount: tx.isError ? 0.0 : tx.amount,
-        asset: "ETH",
+        asset: tx.gasType,
         price: tx.price,
         type: "Chain-in",
         hash: tx.hash,
@@ -77,8 +77,8 @@ export const getRunningBalances = async function (store) {
         timestamp: tx.timestamp,
         account: tx.fromAccount.name,
         date: tx.date,
-        amount: tx.isError ? -tx.ethGasFee : -tx.amount - tx.ethGasFee,
-        asset: "ETH",
+        amount: tx.isError ? -tx.gasFee : -tx.amount - tx.gasFee,
+        asset: tx.gasType,
         price: tx.price,
         type: "Chain-out",
         hash: tx.hash,
@@ -125,12 +125,8 @@ export const getRunningBalances = async function (store) {
   }
   for (const tx of exchangeTrades) {
     let amount = tx.action == "SELL" ? -tx.amount : tx.amount;
-    if (tx.feeCurrency == tx.asset) {
-      amount -= tx.exchangeFee;
-    }
     mappedData.push({
-      txId:
-        "Ex-" + (tx.action == "SELL" ? "O-" : "I-") + tx.txId.substring(0, 13),
+      txId: "Ex-" + tx.txId.substring(0, 13),
       timestamp: tx.timestamp,
       account: tx.account,
       date: tx.date,

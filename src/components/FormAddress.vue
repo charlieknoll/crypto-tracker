@@ -12,6 +12,7 @@
       </div>
     </div>
     <q-input v-model="value.address" label="Eth Acct"></q-input>
+    <q-input v-model="value.chains" label="Chains"></q-input>
   </q-form>
 </template>
 

@@ -19,18 +19,19 @@
 </template>
 
 <script>
+import { scanProviders } from "src/services/etherscan-provider";
 export default {
   name: "TableTransactions",
   // eslint-disable-next-line
   props: {
     title: String,
     data: Array,
-    columns: Array
+    columns: Array,
   },
   data() {
     return {
       page: 1,
-      ready: false
+      ready: false,
     };
   },
   computed: {
@@ -42,12 +43,13 @@ export default {
         const pixels = this.$q.screen.sm
           ? this.$q.screen.height
           : this.$q.screen.height - 50;
-        const titleHeight = this.$refs.transactionTable.$el.firstChild
-          .offsetHeight;
-        const headerHeight = this.$refs.transactionTable.$el.children[1]
-          .firstChild.firstChild.offsetHeight;
-        const footerHeight = this.$refs.transactionTable.$el.children[2]
-          .offsetHeight;
+        const titleHeight =
+          this.$refs.transactionTable.$el.firstChild.offsetHeight;
+        const headerHeight =
+          this.$refs.transactionTable.$el.children[1].firstChild.firstChild
+            .offsetHeight;
+        const footerHeight =
+          this.$refs.transactionTable.$el.children[2].offsetHeight;
         const rowPixels = pixels - titleHeight - headerHeight - footerHeight; //table title, row header, row-footer
         //const rowPixels = pixels - 78 - 28 - 33; //table title, row header, row-footer
         const rows = Math.floor(rowPixels / 28);
@@ -55,7 +57,7 @@ export default {
       },
       set(val) {
         this.page = val.page;
-      }
+      },
     },
     tableHeight() {
       if (this.$q.screen.height == 0) return;
@@ -64,26 +66,29 @@ export default {
           ? this.$q.screen.height
           : this.$q.screen.height - 50) + "px"
       );
-    }
+    },
   },
   watch: {
     data() {
       this.page = 1;
-    }
+    },
   },
   methods: {
     click(evt, row, index) {
       if (evt.ctrlKey) {
         if (row.hash) {
           const txId = row.hash.split("-");
-          window.open("https://etherscan.io/tx/" + txId[0]);
+          const provider = scanProviders.find(
+            (sp) => sp.gasType == row.gasType
+          );
+          window.open(provider.explorerUrl + txId[0]);
         }
       }
-    }
+    },
   },
   mounted() {
     this.ready = true;
-  }
+  },
 };
 </script>
 

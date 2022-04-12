@@ -123,6 +123,14 @@ const methodIds = [
     id: "0x9e5167e5",
     name: "claimTokens",
   },
+  {
+    id: "0xea25e176",
+    name: "claim",
+  },
+  {
+    id: "0xd7ed7453",
+    name: "gnosis win",
+  },
 ];
 export default function getMethodName(input) {
   if (input == "0x") return "";

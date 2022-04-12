@@ -7,16 +7,18 @@ import { LocalStorage } from "quasar";
 import { weiToMoney, bnToFloat, formatCurrency } from "src/utils/moneyUtils";
 
 export const ChainTransaction = function () {
-  this.init = async function (tx) {
-    this.toAccount = actions.addImportedAddress({ address: tx.to });
-    this.fromAccount = actions.addImportedAddress({ address: tx.from });
+  this.init = async function (tx, chain) {
+    // this.toAccount = actions.addImportedAddress({ address: tx.to }, chain);
+    // this.fromAccount = actions.addImportedAddress({ address: tx.from }, chain);
+    this.toAccount = actions.getAccount(tx.to);
+    this.fromAccount = actions.getAccount(tx.from);
     this.hash = tx.hash.toLowerCase();
     this.txId = tx.hash.substring(0, 8);
     if (tx.seqNo) {
       this.hash += "-" + tx.seqNo;
       this.txId += "-" + tx.seqNo;
     }
-    this.asset = "ETH";
+    this.asset = tx.gasType;
     this.toName = this.toAccount ? this.toAccount.name : tx.to.substring(0, 8);
     this.isError = tx.isError == "1";
     this.fromName = this.fromAccount
@@ -52,9 +54,10 @@ export const ChainTransaction = function () {
     this.timestamp = parseInt(tx.timeStamp);
     this.date = new Date(this.timestamp * 1000).toISOString().slice(0, 10);
     //Determine if it is INCOME (curve redemption), SPEND (GitCoin), EXPENSE, BUY, SELL
-    this.price = await getPrice("ETH", this.date);
+    this.gasType = tx.gasType;
+    this.price = await getPrice(this.gasType, this.date);
     this.gross = weiToMoney(BigNumber.from(tx.value), this.price);
-    this.ethGasFee =
+    this.gasFee =
       tx.gasUsed == "0"
         ? 0.0
         : bnToFloat(
@@ -70,7 +73,7 @@ export const ChainTransaction = function () {
           );
     if (this.fromAccount.type.includes("Exchange Owned")) {
       this.fee = 0.0;
-      this.ethGasFee = 0.0;
+      this.gasFee = 0.0;
     }
     return this;
   };
@@ -78,8 +81,7 @@ export const ChainTransaction = function () {
 export const getChainTransactions = async function () {
   const data = LocalStorage.getItem("chainTransactions") ?? [];
   actions.refreshStoreData("addresses");
-  const internalTransactions =
-    LocalStorage.getItem("internalTransactions") ?? [];
+  const internalTransactions = actions.getData("internalTransactions", []);
   let hash;
   let seqNo = 0;
   for (const it of internalTransactions) {
@@ -145,10 +147,10 @@ export const columns = [
   },
   {
     name: "price",
-    label: "ETH Price",
+    label: "Price",
     field: "price",
     align: "right",
-    format: (val, row) => formatCurrency(val),
+    format: (val, row) => formatCurrency(val) + " " + row.asset,
   },
   {
     name: "fee",

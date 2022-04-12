@@ -4,6 +4,7 @@ import { getPrice } from "./price-provider";
 import { floatToMoney } from "../utils/moneyUtils";
 import { LocalStorage } from "quasar";
 import { parse } from "csv-parse/browser/esm/sync";
+import { filterByAssets } from "./filter-service";
 
 export const processExchangeTradesFile = function (data) {
   const stagedData = parse(data, {
@@ -65,6 +66,28 @@ export const getExchangeTrades = async function () {
   const mappedData = [];
 
   for (const tx of data) {
+    //a nonUSD fee tx will always be a sell
+    //first get USDfee
+    let usdFee = 0.0;
+    if (tx.feeCurrency != "USD") {
+      const feeUSDPrice = await getPrice(tx.feeCurrency, tx.date);
+      usdFee = floatToMoney(tx.fee * feeUSDPrice);
+      const feeTx = Object.assign({}, tx);
+      feeTx.action = "SELL";
+      feeTx.txId = "F-" + tx.txId;
+      feeTx.price = feeUSDPrice;
+      feeTx.asset = tx.feeCurrency;
+      feeTx.amount = tx.fee;
+      feeTx.fee = 0.0;
+      feeTx.feeCurrency = "USD";
+      feeTx.currency = "USD";
+      feeTx.gross = floatToMoney(feeTx.amount * feeTx.price);
+      mappedData.push(feeTx);
+    } else {
+      usdFee = tx.fee;
+    }
+    tx.feeCurrency = "USD";
+    tx.fee = usdFee;
     if (tx.currency != "USD") {
       const currencyUSDPrice = await getPrice(tx.currency, tx.date);
       const currencyPrice = tx.price;
@@ -73,25 +96,18 @@ export const getExchangeTrades = async function () {
       tx.amount = tx.volume;
       tx.price = currencyPrice * currencyUSDPrice;
       tx.gross = floatToMoney(tx.amount * tx.price);
-      tx.exchangeFee = tx.fee;
-      if (tx.feeCurrency == tx.currency) {
-        tx.fee = floatToMoney(tx.fee * currencyUSDPrice);
-      } else {
-        tx.fee = floatToMoney(tx.fee);
-      }
-      const fee = tx.fee;
-      tx.txId = txId + (tx.action == "SELL" ? "-1" : "-2");
+      tx.txId = (tx.action == "SELL" ? "S-" : "B-") + txId;
       tx.timestamp = timestamp + (tx.action == "BUY" ? 1 : 0);
-      tx.fee = tx.action == "SELL" ? fee : 0.0;
+      tx.fee = tx.action == "SELL" ? usdFee : 0.0;
       const currencyTx = Object.assign({}, tx);
       currencyTx.action = tx.action == "SELL" ? "BUY" : "SELL";
-      currencyTx.txId = txId + (currencyTx.action == "SELL" ? "-1" : "-2");
+      currencyTx.txId = (currencyTx.action == "SELL" ? "S-" : "B-") + txId;
       currencyTx.timestamp = timestamp + (currencyTx.action == "BUY" ? 1 : 0);
       currencyTx.price = currencyUSDPrice;
       currencyTx.asset = tx.currency;
-      currencyTx.amount = tx.volume * currencyPrice;
+      currencyTx.amount = tx.amount * currencyPrice;
       currencyTx.gross = currencyTx.price * currencyTx.amount;
-      currencyTx.fee = currencyTx.action == "SELL" ? fee : 0.0;
+      currencyTx.fee = currencyTx.action == "SELL" ? usdFee : 0.0;
       if (tx.action == "SELL") {
         mappedData.push(tx);
         mappedData.push(currencyTx);
@@ -100,8 +116,11 @@ export const getExchangeTrades = async function () {
         mappedData.push(tx);
       }
     } else {
-      tx.amount = tx.volume;
+      tx.txId = (tx.action == "SELL" ? "S-" : "B-") + tx.txId;
+      tx.amount = Math.abs(tx.volume);
       tx.gross = floatToMoney(tx.amount * tx.price);
+      tx.fee = usdFee;
+      tx.feeCurrency = "USD";
       mappedData.push(tx);
     }
   }

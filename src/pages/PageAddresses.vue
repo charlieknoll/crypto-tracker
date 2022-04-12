@@ -1,5 +1,5 @@
 <template>
-  <q-page class="constrain q-pa-md" id="pageAddresses">
+  <q-page class="q-pa-md" id="pageAddresses">
     <q-dialog v-model="edit" ref="addressDlg">
       <q-card style="min-width: 500px">
         <q-card-section>
@@ -72,7 +72,9 @@ export default {
       const filtered = this.addresses.filter(function (a) {
         return (
           (a.name && a.name.toLowerCase().includes(filter.toLowerCase())) ||
-          (a.address && a.address.toLowerCase().includes(filter.toLowerCase()))
+          (a.address &&
+            a.address.toLowerCase().includes(filter.toLowerCase())) ||
+          (a.type && a.type.toLowerCase().includes(filter.toLowerCase()))
         );
       });
       return filtered;

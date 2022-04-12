@@ -18,8 +18,12 @@ const actions = {
     if (val === "null" || val === null) return;
     LocalStorage.set(key, val);
   },
-  getData: function (key) {
-    return LocalStorage.getItem(key);
+  getData: function (key, defaultValue) {
+    const val = LocalStorage.getItem(key);
+    if ((!val || val == "undefined") && defaultValue) {
+      return defaultValue;
+    }
+    return val;
   },
   getBaseCurrencies: function () {
     if (!store.settings.baseCurrencies) return [];
@@ -48,17 +52,30 @@ const actions = {
     //setLocalStorage
     LocalStorage.set(key, array);
   },
-  addImportedAddress: function (a) {
+  addImportedAddress: function (a, chain) {
     let address = store.addresses.find(
       (s) => s.address.toLowerCase() === a.address.toLowerCase()
     );
-    if (address) return address;
+    if (address) {
+      const chains = address.chains.split(",");
+      if (chains.indexOf(chain) == -1) {
+        address.chains += "," + chain;
+        this.setData("addresses", store.addresses);
+      }
+      return address;
+    }
     address = new Address(a);
-    address.imported = true;
     address.name = a.address.substring(0, 8);
     address.type = "";
+    address.chain = chain;
     store.addresses.push(address);
     this.setData("addresses", store.addresses);
+    return address;
+  },
+  getAccount: function (a) {
+    let address = store.addresses.find(
+      (s) => s.address.toLowerCase() === a.toLowerCase()
+    );
     return address;
   },
   markUpdated: function () {

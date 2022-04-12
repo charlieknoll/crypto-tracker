@@ -1,13 +1,12 @@
 import { processOpeningPositionsFile } from "./opening-positions-provider";
 import { processExchangeTradesFile } from "./exchange-tx-provider";
 import { processOffchainTransfersFile } from "./offchain-transfers-provider";
-import { parse } from "csv/browser/esm";
+import { parse } from "csv-parse/browser/esm/sync";
 import Address from "../models/address";
 import { actions } from "../boot/actions";
 import { store } from "../boot/store";
 
 import { Notify } from "quasar";
-import address from "../models/address";
 
 const waitFor = async function (fn, args, ms, interval) {
   const timeout = function (ms) {
@@ -54,21 +53,23 @@ function processAllDataFile(content) {
   const backup = JSON.parse(content);
 
   actions.setObservableData("taxYear", backup.taxYear);
-  const addresses = backup.addresses.map((a) => new Address(a));
-  actions.setObservableData("addresses", addresses);
+  //const addresses = backup.addresses.map((a) => new Address(a));
+  actions.setObservableData("addresses", backup.addresses);
   actions.setObservableData("exchangeTrades", backup.exchangeTrades);
   actions.setData("tokenTransactions", backup.tokenTransactions);
   actions.setData("prices", backup.prices);
   actions.setData("chainTransactions", backup.chainTransactions);
+  actions.setData("internalTransactions", backup.internalTransactions);
   actions.setData("exchangeTransferFees", backup.exchangeTransferFees);
   actions.setObservableData("offchainTransfers", backup.offchainTransfers);
   actions.setObservableData("openingPositions", backup.openingPositions);
   actions.setObservableData("settings", backup.settings);
   return (
-    addresses.length +
+    backup.addresses.length +
     backup.exchangeTrades.length +
     backup.tokenTransactions.length +
     backup.chainTransactions.length +
+    (backup.internalTransactions ? backup.internalTransactions.length : 0) +
     backup.exchangeTransferFees.length +
     backup.offchainTransfers.length +
     backup.openingPositions.length +

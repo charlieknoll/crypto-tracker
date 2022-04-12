@@ -61,7 +61,7 @@ async function getSellTxs(
   feeTxs = feeTxs.map((tx) => {
     const feeTx = Object.assign({}, tx);
     feeTx.timestamp = tx.timestamp - 1;
-    feeTx.amount = tx.ethGasFee;
+    feeTx.amount = tx.gasFee;
     feeTx.fee = 0.0;
     feeTx.gross = tx.fee;
     feeTx.action = tx.isError

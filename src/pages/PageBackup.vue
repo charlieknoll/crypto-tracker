@@ -36,7 +36,7 @@ export default {
       currentBlock: 0,
       messages: [],
       $store: store,
-      $actions: actions
+      $actions: actions,
     };
   },
   methods: {
@@ -50,6 +50,8 @@ export default {
       backup.accountHistory = this.$actions.getData("accountHistory") ?? [];
       backup.chainTransactions =
         this.$actions.getData("chainTransactions") ?? [];
+      backup.internalTransactions =
+        this.$actions.getData("internalTransactions") ?? [];
       backup.exchangeTransferFees =
         this.$actions.getData("exchangeTransferFees") ?? [];
       backup.offchainTransfers =
@@ -66,22 +68,27 @@ export default {
         this.$q.notify({
           message: "Browser denied file download...",
           color: "negative",
-          icon: "warning"
+          icon: "warning",
         });
       }
     },
     downloadAddresses() {
-      const simpleAddress = this.$store.addresses.map(a => {
-        return { address: a.address, name: a.name, type: a.type };
+      const simpleAddress = this.$store.addresses.map((a) => {
+        return {
+          address: a.address,
+          name: a.name,
+          type: a.type,
+          chains: a.chains,
+        };
       });
-      const names = ["address", "name", "type"];
+      const names = ["address", "name", "type", "chains"];
       const content = convertToCsv(simpleAddress, names);
       const status = exportFile("addresses.csv", content, "text/csv");
       if (status !== true) {
         this.$q.notify({
           message: "Browser denied file download...",
           color: "negative",
-          icon: "warning"
+          icon: "warning",
         });
       } else {
         this.$actions.setObservableData("addressesNeedsBackup", false);
@@ -96,7 +103,7 @@ export default {
         this.$q.notify({
           message: "Browser denied file download...",
           color: "negative",
-          icon: "warning"
+          icon: "warning",
         });
       } else {
         this.$actions.setObservableData("pricesNeedsBackup", false);
@@ -111,15 +118,15 @@ export default {
         this.$q.notify({
           message: "Browser denied file download...",
           color: "negative",
-          icon: "warning"
+          icon: "warning",
         });
       } else {
         this.$actions.setObservableData("settingsNeedsBackup", false);
       }
-    }
+    },
   },
   async mounted() {
     window.__vue_mounted = "PageBackup";
-  }
+  },
 };
 </script>

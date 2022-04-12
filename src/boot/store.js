@@ -15,9 +15,22 @@ for (let i = startYear; i <= currentYear; i++) {
   taxYears.push(i);
 }
 taxYears.push("All");
-if (!settings.apikey) settings.apikey = process.env.ETHERSCAN_API_KEY;
-if (settings.trackSpentTokens == undefined) settings.trackSpentTokens = true;
 
+if (!settings.apikey) settings.apikey = process.env.ETHERSCAN_API_KEY;
+if (!settings.bscApikey) settings.bscApikey = process.env.BSCSCAN_API_KEY;
+if (settings.trackSpentTokens == undefined) settings.trackSpentTokens = true;
+// var tempAddresses = LocalStorage.getItem("addresses") ?? [];
+// tempAddresses = tempAddresses.map((a) => {
+//   if (!a.chains) a.chains = "ETH";
+//   return a;
+// });
+// LocalStorage.set("addresses", tempAddresses);
+// var data = LocalStorage.getItem("internalTransactions") ?? [];
+// var data = data.map((t) => {
+//   t.gasType = "ETH";
+//   return t;
+// });
+// LocalStorage.set("internalTransactions", data);
 const _store = reactive({
   settings,
   assets: [],

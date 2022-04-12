@@ -14,7 +14,15 @@
         label="Etherscan API KEY"
         hint="Go to etherscan.io and create a key"
         lazy-rules
-        :rules="[val => (val && val.length == 34) || 'Invalid API KEY']"
+        :rules="[(val) => (val && val.length == 34) || 'Invalid API KEY']"
+      />
+      <q-input
+        filled
+        v-model="settings.bscApikey"
+        label="BscScan API KEY"
+        hint="Go to bscscan.com and create a key"
+        lazy-rules
+        :rules="[(val) => (val && val.length == 34) || 'Invalid API KEY']"
       />
       <q-input
         filled
@@ -51,22 +59,22 @@ export default {
   name: "PageSettings",
   data() {
     return {
-      settings: store.settings
+      settings: store.settings,
     };
   },
   methods: {
     load() {
       this.settings = this.$store.settings;
-    }
+    },
   },
   watch: {
     settings: {
-      handler: function(val) {
+      handler: function (val) {
         actions.setObservableData("settings", val);
         actions.setObservableData("settingsNeedsBackup", true);
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   async created() {
     await this.load();
@@ -77,6 +85,6 @@ export default {
   },
   mounted() {
     window.__vue_mounted = "PageSettings";
-  }
+  },
 };
 </script>
