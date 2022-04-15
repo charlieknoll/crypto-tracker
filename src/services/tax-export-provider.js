@@ -9,7 +9,7 @@ function getTotals(txs) {
     costBasis: 0.0,
     adjustmentCode: "",
     washSaleAdj: 0.0,
-    gainOrLoss: 0.0
+    gainOrLoss: 0.0,
   };
   for (const tx of txs) {
     totals.proceeds += tx.proceeds;
@@ -20,7 +20,7 @@ function getTotals(txs) {
   return totals;
 }
 function formatTxs(txs) {
-  txs = txs.map(tx => {
+  txs = txs.map((tx) => {
     tx.adjustmentCode = tx.washSaleAdj > 0.0 ? "W" : "";
     tx.proceeds = formatNumber(tx.proceeds);
     tx.costBasis = formatNumber(tx.costBasis);
@@ -29,20 +29,20 @@ function formatTxs(txs) {
     return tx;
   });
 }
-export const generate8949 = function(txs) {
+export const generate8949 = function (txs) {
   const names = [
     "description",
     "dateAcquired",
-    "dateSold",
+    "date",
     "proceeds",
     "costBasis",
     "adjustmentCode",
     "washSaleAdj",
-    "gainOrLoss"
+    "gainOrLoss",
   ];
 
-  const shortTxs = txs.filter(tx => tx.longShort == "Short");
-  const longTxs = txs.filter(tx => tx.longShort == "Long");
+  const shortTxs = txs.filter((tx) => tx.longShort == "Short");
+  const longTxs = txs.filter((tx) => tx.longShort == "Long");
   shortTxs.push(getTotals(shortTxs));
   longTxs.push(getTotals(longTxs));
   formatTxs(shortTxs);
@@ -72,58 +72,58 @@ export const columns = [
     name: "asset",
     label: "Asset",
     field: "asset",
-    align: "left"
+    align: "left",
   },
   {
     name: "dateSold",
     label: "Date Sold",
     field: "date",
-    align: "left"
+    align: "left",
   },
   {
     name: "dateAcquired",
     label: "Date Acquired",
     field: "dateAcquired",
-    align: "left"
+    align: "left",
   },
   {
     name: "longShort",
     label: "Type",
     field: "longShort",
-    align: "left"
+    align: "left",
   },
   {
     name: "amount",
     label: "Amount",
     field: "amount",
-    align: "left"
+    align: "left",
   },
   {
     name: "proceeds",
     label: "Proceeds",
     field: "proceeds",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "costBasis",
     label: "Cost Basis",
     field: "costBasis",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "gainOrLoss",
     label: "Gain/Loss",
     field: "gainOrLoss",
     align: "right",
-    format: (val, row) => formatCurrency(val)
+    format: (val, row) => formatCurrency(val),
   },
   {
     name: "washSaleAdj",
     label: "Wash Sale Adj",
     field: "washSaleAdj",
     align: "right",
-    format: (val, row) => formatCurrency(val)
-  }
+    format: (val, row) => formatCurrency(val),
+  },
 ];
